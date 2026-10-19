@@ -4,40 +4,172 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Projects">
-<title>Project Portal</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Portal">
+<meta name="theme-color" content="#F4EBDD">
+<title>Portal</title>
 <style>
-:root { --bg:#f7f7f8; --card:#fff; --text:#1c1c1e; --muted:#6b7280; --accent:#3b82f6; --border:#e5e7eb; --danger:#ef4444; }
+:root {
+  --cream: #F4EBDD;
+  --graphite: #292724;
+  --lime: #DCEB32;
+  --coral: #F27691;
+  --sage: #687B59;
+  --paper: #FFFAF1;
+  --muted: #8B8478;
+  --line: #E5DACC;
+  --line-strong: #D4C7B3;
+  --shadow-sm: 0 1px 2px rgba(41,39,36,0.04);
+  --shadow-md: 0 4px 16px rgba(41,39,36,0.06);
+  --shadow-lg: 0 12px 32px rgba(41,39,36,0.08);
+}
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; }
-body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-header { padding:14px 16px; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:8px; }
-h1 { font-size:17px; margin:0; flex:1 1 auto; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-main { padding:16px; max-width:720px; margin:0 auto; }
-button { font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--border); background:var(--card); padding:10px 14px; color:var(--text); }
-button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
-button.danger { color:var(--danger); }
-button.back { padding:8px 12px; }
-.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; }
-.row { display:flex; gap:8px; align-items:center; }
-.spacer { flex:1 1 auto; }
-.muted { color:var(--muted); font-size:13px; }
-.empty { color:var(--muted); text-align:center; padding:32px 16px; }
-.list { display:flex; flex-direction:column; gap:8px; }
-.item { padding:12px 14px; background:var(--card); border:1px solid var(--border); border-radius:12px; }
-.note-title { font-weight:600; margin-bottom:4px; }
-.note-preview { color:var(--muted); font-size:13px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-textarea { width:100%; min-height:60vh; font-family:ui-monospace,Menlo,monospace; font-size:15px; padding:12px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text); }
+html, body {
+  margin: 0; padding: 0; background: var(--cream); color: var(--graphite);
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); min-height: 100vh; }
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; padding: 0; }
+input, textarea { font: inherit; color: inherit; }
+
+.app { max-width: 640px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+.topbar { display: flex; align-items: center; gap: 12px; padding: 20px 20px 12px; }
+.topbar h1 { font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.03em; line-height: 1.1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar .icon-btn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); box-shadow: var(--shadow-sm); flex-shrink: 0; }
+.topbar .icon-btn svg { width: 20px; height: 20px; }
+
+.content { padding: 8px 20px 120px; flex: 1; }
+
+.backup-banner {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  background: var(--graphite); color: var(--paper); border-radius: 18px; margin-bottom: 20px;
+  transition: background .3s;
+}
+.backup-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); flex-shrink: 0; box-shadow: 0 0 0 3px rgba(220,235,50,0.2); }
+.backup-banner .btext { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
+.backup-banner .btext strong { font-weight: 600; display: block; font-size: 15px; margin-bottom: 2px; }
+.backup-banner .btext span { opacity: 0.65; }
+.backup-banner .bbtn { padding: 8px 16px; background: var(--lime); color: var(--graphite); border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.backup-banner.old { background: var(--coral); }
+.backup-banner.old .dot { background: var(--graphite); box-shadow: 0 0 0 3px rgba(41,39,36,0.2); }
+
+.section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 24px 0 10px; }
+
+.projects, .notes { display: flex; flex-direction: column; gap: 10px; }
+
+.project-card {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  background: var(--paper); border-radius: 20px; border: 1px solid var(--line);
+  transition: transform .15s, box-shadow .15s;
+  text-align: left; width: 100%;
+}
+.project-card:active { transform: scale(0.985); }
+.project-card .initial {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+  font-weight: 700; font-size: 18px; flex-shrink: 0;
+}
+.project-card .meta { flex: 1; min-width: 0; }
+.project-card .pname { font-weight: 600; font-size: 16px; margin: 0 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-card .pinfo { font-size: 13px; color: var(--muted); }
+.project-card .arrow { color: var(--line-strong); display: grid; place-items: center; }
+
+.note-card {
+  display: block; padding: 14px 16px; background: var(--paper); border-radius: 16px;
+  border: 1px solid var(--line); text-align: left; width: 100%;
+  transition: transform .15s;
+}
+.note-card:active { transform: scale(0.985); }
+.note-card .ntitle { font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+.note-card .npreview { font-size: 13px; color: var(--muted); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+.empty { text-align: center; padding: 48px 20px; }
+.empty .mark { display: inline-block; padding: 22px; background: var(--lime); border-radius: 24px; margin-bottom: 20px; }
+.empty .mark svg { width: 40px; height: 40px; display: block; }
+.empty p { color: var(--muted); font-size: 15px; margin: 0 auto 22px; max-width: 300px; line-height: 1.5; }
+.empty .cta { padding: 14px 24px; border-radius: 14px; font-weight: 600; font-size: 15px; background: var(--graphite); color: var(--paper); }
+
+.fab {
+  position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom));
+  width: 60px; height: 60px; border-radius: 50%; background: var(--lime); color: var(--graphite);
+  display: grid; place-items: center;
+  box-shadow: 0 8px 24px rgba(220,235,50,0.5), 0 2px 8px rgba(41,39,36,0.12);
+  transition: transform .15s;
+  z-index: 40;
+}
+.fab:active { transform: scale(0.92); }
+.fab svg { width: 28px; height: 28px; }
+
+.editor-wrap { padding: 0 20px; flex: 1; display: flex; flex-direction: column; }
+.editor {
+  width: 100%; min-height: 60vh; padding: 20px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 16px; line-height: 1.6;
+  border: 1px solid var(--line); border-radius: 20px;
+  background: var(--paper); resize: none; outline: none; color: var(--graphite);
+  transition: border-color .15s, box-shadow .15s;
+}
+.editor:focus { border-color: var(--line-strong); box-shadow: 0 0 0 3px rgba(220,235,50,0.2); }
+.editor::placeholder { color: var(--muted); }
+.save-status { padding: 14px 4px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.save-status .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); transition: background .2s; }
+.save-status.saving .sdot { background: var(--coral); }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(41,39,36,0.5);
+  display: grid; place-items: center; padding: 20px; z-index: 100;
+  animation: fadeIn .15s ease;
+}
+.modal {
+  background: var(--paper); border-radius: 24px; padding: 24px;
+  width: 100%; max-width: 400px; box-shadow: var(--shadow-lg);
+  animation: slideUp .2s ease;
+}
+.modal h3 { margin: 0 0 16px; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.modal p { margin: 0 0 20px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.modal input {
+  width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line);
+  background: var(--cream); font-size: 16px; outline: none; margin-bottom: 16px;
+}
+.modal input:focus { border-color: var(--graphite); }
+.modal-actions { display: flex; gap: 8px; }
+.modal-actions button { flex: 1; padding: 14px; border-radius: 14px; font-weight: 600; font-size: 15px; }
+.btn-primary { background: var(--graphite); color: var(--paper); }
+.btn-secondary { background: var(--cream); color: var(--graphite); border: 1px solid var(--line); }
+.btn-danger { background: var(--coral); color: var(--paper); }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  padding: 12px 20px; background: var(--graphite); color: var(--paper);
+  border-radius: 999px; font-size: 14px; font-weight: 500;
+  box-shadow: var(--shadow-lg); z-index: 200;
+  animation: slideUp .2s ease; white-space: nowrap;
+}
+
+.c0 { background: var(--lime); color: var(--graphite); }
+.c1 { background: var(--coral); color: var(--paper); }
+.c2 { background: var(--sage); color: var(--paper); }
+.c3 { background: var(--graphite); color: var(--paper); }
+.c4 { background: #E8DCC8; color: var(--graphite); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (hover: hover) {
+  .project-card:hover, .note-card:hover { box-shadow: var(--shadow-md); }
+  .bbtn:hover { filter: brightness(0.95); }
+  .fab:hover { transform: scale(1.05); }
+}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app" class="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <script>
-const app = document.getElementById('app');
 const state = { view:'list', projects:[], currentProject:null, notes:[], currentNote:null, noteContent:'' };
 
-// ===== OPFS helpers =====
 const root = () => navigator.storage.getDirectory();
 const projectsDir = async (create=true) => (await root()).getDirectoryHandle('projects', { create });
 const projectDir  = async (id, create=false) => (await projectsDir()).getDirectoryHandle(id, { create });
@@ -103,10 +235,9 @@ async function deleteNote(projectId, noteId) {
 
 function newNoteId() {
   const d = new Date(); const p = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}-${Math.random().toString(36).slice(2,6)}`;
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}`;
 }
 
-// ===== Backup =====
 async function collectAll(dir, prefix, out) {
   for await (const [name, h] of dir) {
     if (h.kind === 'directory') await collectAll(h, prefix + name + '/', out);
@@ -123,68 +254,159 @@ async function exportBackup() {
     createdAt:new Date().toISOString(), scope:'all'
   }, null, 2));
   const zipped = fflate.zipSync(files, { level: 6 });
-  const filename = `project-portal-${new Date().toISOString().slice(0,10)}.zip`;
+  const filename = `portal-${new Date().toISOString().slice(0,10)}.zip`;
   const file = new File([new Blob([zipped], { type:'application/zip' })], filename, { type:'application/zip' });
   if (navigator.canShare && navigator.canShare({ files:[file] })) {
-    try { await navigator.share({ files:[file], title: filename }); return; }
-    catch (e) { if (e.name === 'AbortError') return; }
+    try {
+      await navigator.share({ files:[file], title: filename });
+      localStorage.setItem('lastBackup', new Date().toISOString());
+      toast('Бэкап отправлен');
+      return;
+    } catch (e) { if (e.name === 'AbortError') return; }
   }
   const url = URL.createObjectURL(file);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+  localStorage.setItem('lastBackup', new Date().toISOString());
+  toast('Бэкап сохранён');
 }
 
-// ===== UI helpers =====
 function el(tag, props={}, ...children) {
   const e = document.createElement(tag);
   for (const [k,v] of Object.entries(props)) {
     if (k === 'onclick') e.addEventListener('click', v);
     else if (k === 'class') e.className = v;
     else if (k === 'style') e.style.cssText = v;
+    else if (k === 'html') e.innerHTML = v;
     else e[k] = v;
   }
   for (const c of children) if (c != null) e.append(typeof c === 'string' ? document.createTextNode(c) : c);
   return e;
 }
 
+function svg(path, opts={}) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('fill', 'none');
+  s.setAttribute('stroke', 'currentColor');
+  s.setAttribute('stroke-width', opts.sw || '2');
+  s.setAttribute('stroke-linecap', 'round');
+  s.setAttribute('stroke-linejoin', 'round');
+  s.innerHTML = path;
+  return s;
+}
+
+function toast(msg) {
+  const t = el('div', { class: 'toast' }, msg);
+  document.body.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity .3s'; t.style.opacity = '0';
+    setTimeout(() => t.remove(), 300);
+  }, 2000);
+}
+
+function colorClass(i) { return 'c' + (i % 5); }
+function initials(name) { return (name || '?').trim().slice(0, 1).toUpperCase(); }
+function daysSince(iso) { return iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null; }
+
+function openModal({ title, text, input, inputPlaceholder='', confirmText='OK', danger=false, onConfirm }) {
+  if (document.querySelector('.modal-backdrop')) return;
+  const backdrop = el('div', { class: 'modal-backdrop' });
+  const modal = el('div', { class: 'modal' });
+  modal.append(el('h3', {}, title));
+  if (text) modal.append(el('p', {}, text));
+  let inp = null;
+  if (input) {
+    inp = el('input', { type: 'text', placeholder: inputPlaceholder });
+    modal.append(inp);
+  }
+  const actions = el('div', { class: 'modal-actions' });
+  actions.append(
+    el('button', { class: 'btn-secondary', onclick: () => backdrop.remove() }, 'Отмена'),
+    el('button', { class: danger ? 'btn-danger' : 'btn-primary', onclick: () => {
+      const v = inp ? inp.value.trim() : true;
+      if (inp && !v) { inp.focus(); return; }
+      backdrop.remove();
+      onConfirm(v);
+    }}, confirmText)
+  );
+  modal.append(actions);
+  backdrop.append(modal);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
+  document.body.appendChild(backdrop);
+  if (inp) setTimeout(() => inp.focus(), 50);
+}
+
+const app = document.getElementById('app');
+
 async function render() {
   app.innerHTML = '';
-  if (state.view === 'list')    await renderList();
+  if (state.view === 'list') await renderList();
   else if (state.view === 'project') await renderProject();
-  else if (state.view === 'note')    renderNote();
+  else if (state.view === 'note') renderNote();
+}
+
+function bigCheck() {
+  return el('div', { class: 'mark' },
+    svg('<polyline points="20 6 9 17 4 12"/>', { sw:'2.5' })
+  );
 }
 
 async function renderList() {
   state.projects = await listProjects();
-  const header = el('header', {},
-    el('h1', {}, 'Проекты'),
-    el('button', { class:'primary', onclick: addProject }, '+')
-  );
-  const main = el('main');
-  main.append(el('div', { class:'card' },
-    el('div', { class:'row' },
-      el('div', { class:'spacer' },
-        el('div', { class:'note-title' }, 'Бэкап'),
-        el('div', { class:'muted' }, 'ZIP → Файлы / облако')
+
+  const topbar = el('div', { class: 'topbar' }, el('h1', {}, 'Проекты'));
+  const content = el('div', { class: 'content' });
+
+  const lastBackup = localStorage.getItem('lastBackup');
+  const days = daysSince(lastBackup);
+  const isOld = !lastBackup || days >= 3;
+  let btext;
+  if (!lastBackup) btext = 'Сделайте первый бэкап';
+  else if (days === 0) btext = 'Сегодня';
+  else if (days === 1) btext = 'Вчера';
+  else btext = `${days} дн. назад`;
+  content.append(
+    el('div', { class: 'backup-banner' + (isOld ? ' old' : '') },
+      el('div', { class: 'dot' }),
+      el('div', { class: 'btext' },
+        el('strong', {}, isOld ? 'Пора сделать бэкап' : 'Всё сохранено'),
+        el('span', {}, 'Последний: ' + btext)
       ),
-      el('button', { class:'primary', onclick: exportBackup }, 'Скачать')
+      el('button', { class: 'bbtn', onclick: exportBackup }, 'Бэкап')
     )
-  ));
+  );
+
   if (!state.projects.length) {
-    main.append(el('div', { class:'empty' }, 'Пока нет проектов. Нажмите «+».'));
+    content.append(
+      el('div', { class: 'empty' },
+        bigCheck(),
+        el('p', {}, 'Создайте первый проект, чтобы складывать в него заметки, идеи и архитектуру.'),
+        el('button', { class: 'cta', onclick: addProject }, 'Создать проект')
+      )
+    );
   } else {
-    const list = el('div', { class:'list' });
-    for (const p of state.projects) {
-      list.append(el('div', { class:'item', onclick: () => openProject(p.id) },
-        el('div', { class:'note-title' }, p.name || p.id),
-        el('div', { class:'muted' }, p.updatedAt ? 'Изменён ' + p.updatedAt.slice(0,10) : '')
+    content.append(el('div', { class: 'section-title' }, 'Все проекты · ' + state.projects.length));
+    const list = el('div', { class: 'projects' });
+    state.projects.forEach((p, i) => {
+      list.append(el('button', { class: 'project-card', onclick: () => openProject(p.id) },
+        el('div', { class: 'initial ' + colorClass(i) }, initials(p.name || p.id)),
+        el('div', { class: 'meta' },
+          el('div', { class: 'pname' }, p.name || p.id),
+          el('div', { class: 'pinfo' }, p.updatedAt ? 'изм. ' + p.updatedAt.slice(0,10) : 'без изменений')
+        ),
+        el('div', { class: 'arrow' }, svg('<polyline points="9 6 15 12 9 18"/>', { sw:'1.5' }))
       ));
-    }
-    main.append(list);
+    });
+    content.append(list);
   }
-  app.append(header, main);
+
+  app.append(topbar, content);
+  app.append(el('button', { class: 'fab', onclick: addProject },
+    svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
+  ));
 }
 
 async function openProject(id) {
@@ -196,26 +418,40 @@ async function openProject(id) {
 
 async function renderProject() {
   const p = state.currentProject;
-  const header = el('header', {},
-    el('button', { class:'back', onclick: () => { state.view='list'; render(); } }, '‹'),
-    el('h1', {}, p.name || p.id),
-    el('button', { class:'primary', onclick: addNote }, '+')
+  const topbar = el('div', { class: 'topbar' },
+    el('button', { class: 'icon-btn', onclick: () => { state.view='list'; render(); } },
+      svg('<polyline points="15 6 9 12 15 18"/>', { sw:'2.2' })
+    ),
+    el('h1', {}, p.name || p.id)
   );
-  const main = el('main');
+  const content = el('div', { class: 'content' });
+
   if (!state.notes.length) {
-    main.append(el('div', { class:'empty' }, 'Нет заметок. Нажмите «+».'));
+    content.append(
+      el('div', { class: 'empty' },
+        bigCheck(),
+        el('p', {}, 'В этом проекте пока нет заметок. Первая сохранится автоматически.'),
+        el('button', { class: 'cta', onclick: addNote }, 'Новая заметка')
+      )
+    );
   } else {
-    const list = el('div', { class:'list' });
+    content.append(el('div', { class: 'section-title' }, 'Заметки · ' + state.notes.length));
+    const list = el('div', { class: 'notes' });
     for (const n of state.notes) {
-      const preview = n.text.replace(/^#.*$/m,'').replace(/[#*_`>]/g,'').trim().slice(0,120) || 'Пусто';
-      list.append(el('div', { class:'item', onclick: () => openNote(n.id) },
-        el('div', { class:'note-title' }, n.id),
-        el('div', { class:'note-preview' }, preview)
+      const body = n.text.replace(/^#.*$/m,'').replace(/[#*_`>]/g,'').trim();
+      const preview = body.slice(0,140) || 'Пусто';
+      list.append(el('button', { class: 'note-card', onclick: () => openNote(n.id) },
+        el('div', { class: 'ntitle' }, n.id),
+        el('div', { class: 'npreview' }, preview)
       ));
     }
-    main.append(list);
+    content.append(list);
   }
-  app.append(header, main);
+
+  app.append(topbar, content);
+  app.append(el('button', { class: 'fab', onclick: addNote },
+    svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
+  ));
 }
 
 async function openNote(noteId) {
@@ -226,22 +462,61 @@ async function openNote(noteId) {
 }
 
 function renderNote() {
-  const header = el('header', {},
-    el('button', { class:'back', onclick: async () => { await saveCurrentNote(); state.view='project'; state.notes = await listNotes(state.currentProject.id); render(); } }, '‹'),
-    el('h1', {}, state.currentNote),
-    el('button', { class:'danger', onclick: deleteCurrentNote }, 'Удал.')
+  const topbar = el('div', { class: 'topbar' },
+    el('button', { class: 'icon-btn', onclick: async () => {
+      await saveCurrentNote();
+      state.view = 'project';
+      state.notes = await listNotes(state.currentProject.id);
+      render();
+    }}, svg('<polyline points="15 6 9 12 15 18"/>', { sw:'2.2' })),
+    el('h1', { style: 'font-size:16px;font-weight:600' }, state.currentNote),
+    el('button', { class: 'icon-btn', onclick: showNoteMenu },
+      svg('<circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/>')
+    )
   );
-  const main = el('main');
-  const ta = el('textarea', {});
+
+  const wrap = el('div', { class: 'editor-wrap' });
+  const ta = el('textarea', { class: 'editor', placeholder: 'Пишите здесь. Markdown поддерживается. Автосохранение.' });
   ta.value = state.noteContent;
+
+  const status = el('div', { class: 'save-status' },
+    el('div', { class: 'sdot' }),
+    el('span', {}, 'Сохранено')
+  );
+
   let timer = null;
   ta.addEventListener('input', () => {
     state.noteContent = ta.value;
+    status.className = 'save-status saving';
+    status.lastChild.textContent = 'Сохранение...';
     clearTimeout(timer);
-    timer = setTimeout(saveCurrentNote, 800);
+    timer = setTimeout(async () => {
+      await saveCurrentNote();
+      status.className = 'save-status';
+      status.lastChild.textContent = 'Сохранено';
+    }, 700);
   });
-  main.append(ta, el('div', { class:'muted', style:'margin-top:8px' }, 'Markdown. Автосохранение через 0.8с.'));
-  app.append(header, main);
+
+  wrap.append(ta, status);
+  app.append(topbar, wrap);
+  setTimeout(() => ta.focus(), 80);
+}
+
+function showNoteMenu() {
+  openModal({
+    title: 'Удалить заметку?',
+    text: 'Заметка будет удалена без возможности отмены. Бэкап сохранит её только если вы сделали его ранее.',
+    confirmText: 'Удалить',
+    danger: true,
+    onConfirm: async () => {
+      await deleteNote(state.currentProject.id, state.currentNote);
+      state.currentNote = null;
+      state.view = 'project';
+      state.notes = await listNotes(state.currentProject.id);
+      toast('Заметка удалена');
+      render();
+    }
+  });
 }
 
 async function saveCurrentNote() {
@@ -249,32 +524,30 @@ async function saveCurrentNote() {
   await saveNote(state.currentProject.id, state.currentNote, state.noteContent);
 }
 
-async function addProject() {
-  const name = prompt('Название проекта:');
-  if (!name || !name.trim()) return;
-  await createProject(name);
-  render();
+function addProject() {
+  openModal({
+    title: 'Новый проект',
+    input: true,
+    inputPlaceholder: 'Название проекта',
+    confirmText: 'Создать',
+    onConfirm: async (name) => {
+      await createProject(name);
+      toast('Проект создан');
+      render();
+    }
+  });
 }
 
 async function addNote() {
   const id = newNoteId();
-  await saveNote(state.currentProject.id, id, '# ' + id + '\n\n');
+  await saveNote(state.currentProject.id, id, '');
   state.notes = await listNotes(state.currentProject.id);
   await openNote(id);
 }
 
-async function deleteCurrentNote() {
-  if (!confirm('Удалить заметку?')) return;
-  await deleteNote(state.currentProject.id, state.currentNote);
-  state.currentNote = null; state.view = 'project';
-  state.notes = await listNotes(state.currentProject.id);
-  render();
-}
-
-// boot
 (async () => {
   if (!navigator.storage || !navigator.storage.getDirectory) {
-    document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:system-ui">Браузер не поддерживает OPFS. Нужен Safari iOS 15.2+ или Chrome.</div>';
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:system-ui;background:#F4EBDD;min-height:100vh;color:#292724">Браузер не поддерживает OPFS. Нужен Safari iOS 15.2+ или Chrome.</div>';
     return;
   }
   await render();
