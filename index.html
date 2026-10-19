@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Projects">
+<title>Project Portal</title>
+<style>
+:root { --bg:#f7f7f8; --card:#fff; --text:#1c1c1e; --muted:#6b7280; --accent:#3b82f6; --border:#e5e7eb; --danger:#ef4444; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; }
+body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+header { padding:14px 16px; background:var(--card); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:8px; }
+h1 { font-size:17px; margin:0; flex:1 1 auto; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+main { padding:16px; max-width:720px; margin:0 auto; }
+button { font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--border); background:var(--card); padding:10px 14px; color:var(--text); }
+button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+button.danger { color:var(--danger); }
+button.back { padding:8px 12px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:12px; }
+.row { display:flex; gap:8px; align-items:center; }
+.spacer { flex:1 1 auto; }
+.muted { color:var(--muted); font-size:13px; }
+.empty { color:var(--muted); text-align:center; padding:32px 16px; }
+.list { display:flex; flex-direction:column; gap:8px; }
+.item { padding:12px 14px; background:var(--card); border:1px solid var(--border); border-radius:12px; }
+.note-title { font-weight:600; margin-bottom:4px; }
+.note-preview { color:var(--muted); font-size:13px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+textarea { width:100%; min-height:60vh; font-family:ui-monospace,Menlo,monospace; font-size:15px; padding:12px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script>
+const app = document.getElementById('app');
+const state = { view:'list', projects:[], currentProject:null, notes:[], currentNote:null, noteContent:'' };
+
+// ===== OPFS helpers =====
+const root = () => navigator.storage.getDirectory();
+const projectsDir = async (create=true) => (await root()).getDirectoryHandle('projects', { create });
+const projectDir  = async (id, create=false) => (await projectsDir()).getDirectoryHandle(id, { create });
+const notesDir    = async (id, create=false) => (await projectDir(id)).getDirectoryHandle('notes', { create });
+const readJSON = async h => JSON.parse(await (await h.getFile()).text());
+async function writeFile(h, text) { const w = await h.createWritable(); await w.write(text); await w.close(); }
+
+async function listProjects() {
+  let dir; try { dir = await projectsDir(); } catch { return []; }
+  const out = [];
+  for await (const [name, h] of dir) {
+    if (h.kind !== 'directory') continue;
+    let meta = { name };
+    try { meta = await readJSON(await h.getFileHandle('project.json')); } catch {}
+    out.push({ id: name, ...meta });
+  }
+  out.sort((a,b) => (b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));
+  return out;
+}
+
+async function createProject(name) {
+  const base = name.trim().toLowerCase().replace(/[^a-z0-9а-яё]+/gi,'-').replace(/^-|-$/g,'') || 'project';
+  const id = base + '-' + Date.now().toString(36);
+  const dir = await projectDir(id, true);
+  const mh = await dir.getFileHandle('project.json', { create: true });
+  const meta = { name: name.trim(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  await writeFile(mh, JSON.stringify(meta, null, 2));
+  return { id, ...meta };
+}
+
+async function listNotes(projectId) {
+  let dir; try { dir = await notesDir(projectId); } catch { return []; }
+  const out = [];
+  for await (const [name, h] of dir) {
+    if (h.kind !== 'file' || !name.endsWith('.md')) continue;
+    out.push({ id: name.slice(0,-3), text: await (await h.getFile()).text() });
+  }
+  out.sort((a,b) => b.id.localeCompare(a.id));
+  return out;
+}
+
+async function readNote(projectId, noteId) {
+  const fh = await (await notesDir(projectId)).getFileHandle(noteId + '.md');
+  return await (await fh.getFile()).text();
+}
+
+async function saveNote(projectId, noteId, text) {
+  const dir = await notesDir(projectId, true);
+  const fh = await dir.getFileHandle(noteId + '.md', { create: true });
+  await writeFile(fh, text);
+  try {
+    const pd = await projectDir(projectId);
+    const mh = await pd.getFileHandle('project.json');
+    const meta = await readJSON(mh);
+    meta.updatedAt = new Date().toISOString();
+    await writeFile(mh, JSON.stringify(meta, null, 2));
+  } catch {}
+}
+
+async function deleteNote(projectId, noteId) {
+  await (await notesDir(projectId)).removeEntry(noteId + '.md');
+}
+
+function newNoteId() {
+  const d = new Date(); const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}-${Math.random().toString(36).slice(2,6)}`;
+}
+
+// ===== Backup =====
+async function collectAll(dir, prefix, out) {
+  for await (const [name, h] of dir) {
+    if (h.kind === 'directory') await collectAll(h, prefix + name + '/', out);
+    else out[prefix + name] = new Uint8Array(await (await h.getFile()).arrayBuffer());
+  }
+}
+
+async function exportBackup() {
+  let pd; try { pd = await projectsDir(); } catch { pd = null; }
+  const files = {};
+  if (pd) await collectAll(pd, 'projects/', files);
+  files['manifest.json'] = fflate.strToU8(JSON.stringify({
+    format:'project-portal-backup', version:1,
+    createdAt:new Date().toISOString(), scope:'all'
+  }, null, 2));
+  const zipped = fflate.zipSync(files, { level: 6 });
+  const filename = `project-portal-${new Date().toISOString().slice(0,10)}.zip`;
+  const file = new File([new Blob([zipped], { type:'application/zip' })], filename, { type:'application/zip' });
+  if (navigator.canShare && navigator.canShare({ files:[file] })) {
+    try { await navigator.share({ files:[file], title: filename }); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// ===== UI helpers =====
+function el(tag, props={}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(props)) {
+    if (k === 'onclick') e.addEventListener('click', v);
+    else if (k === 'class') e.className = v;
+    else if (k === 'style') e.style.cssText = v;
+    else e[k] = v;
+  }
+  for (const c of children) if (c != null) e.append(typeof c === 'string' ? document.createTextNode(c) : c);
+  return e;
+}
+
+async function render() {
+  app.innerHTML = '';
+  if (state.view === 'list')    await renderList();
+  else if (state.view === 'project') await renderProject();
+  else if (state.view === 'note')    renderNote();
+}
+
+async function renderList() {
+  state.projects = await listProjects();
+  const header = el('header', {},
+    el('h1', {}, 'Проекты'),
+    el('button', { class:'primary', onclick: addProject }, '+')
+  );
+  const main = el('main');
+  main.append(el('div', { class:'card' },
+    el('div', { class:'row' },
+      el('div', { class:'spacer' },
+        el('div', { class:'note-title' }, 'Бэкап'),
+        el('div', { class:'muted' }, 'ZIP → Файлы / облако')
+      ),
+      el('button', { class:'primary', onclick: exportBackup }, 'Скачать')
+    )
+  ));
+  if (!state.projects.length) {
+    main.append(el('div', { class:'empty' }, 'Пока нет проектов. Нажмите «+».'));
+  } else {
+    const list = el('div', { class:'list' });
+    for (const p of state.projects) {
+      list.append(el('div', { class:'item', onclick: () => openProject(p.id) },
+        el('div', { class:'note-title' }, p.name || p.id),
+        el('div', { class:'muted' }, p.updatedAt ? 'Изменён ' + p.updatedAt.slice(0,10) : '')
+      ));
+    }
+    main.append(list);
+  }
+  app.append(header, main);
+}
+
+async function openProject(id) {
+  state.currentProject = state.projects.find(p => p.id === id) || { id, name:id };
+  state.notes = await listNotes(id);
+  state.view = 'project';
+  render();
+}
+
+async function renderProject() {
+  const p = state.currentProject;
+  const header = el('header', {},
+    el('button', { class:'back', onclick: () => { state.view='list'; render(); } }, '‹'),
+    el('h1', {}, p.name || p.id),
+    el('button', { class:'primary', onclick: addNote }, '+')
+  );
+  const main = el('main');
+  if (!state.notes.length) {
+    main.append(el('div', { class:'empty' }, 'Нет заметок. Нажмите «+».'));
+  } else {
+    const list = el('div', { class:'list' });
+    for (const n of state.notes) {
+      const preview = n.text.replace(/^#.*$/m,'').replace(/[#*_`>]/g,'').trim().slice(0,120) || 'Пусто';
+      list.append(el('div', { class:'item', onclick: () => openNote(n.id) },
+        el('div', { class:'note-title' }, n.id),
+        el('div', { class:'note-preview' }, preview)
+      ));
+    }
+    main.append(list);
+  }
+  app.append(header, main);
+}
+
+async function openNote(noteId) {
+  state.currentNote = noteId;
+  state.noteContent = await readNote(state.currentProject.id, noteId);
+  state.view = 'note';
+  render();
+}
+
+function renderNote() {
+  const header = el('header', {},
+    el('button', { class:'back', onclick: async () => { await saveCurrentNote(); state.view='project'; state.notes = await listNotes(state.currentProject.id); render(); } }, '‹'),
+    el('h1', {}, state.currentNote),
+    el('button', { class:'danger', onclick: deleteCurrentNote }, 'Удал.')
+  );
+  const main = el('main');
+  const ta = el('textarea', {});
+  ta.value = state.noteContent;
+  let timer = null;
+  ta.addEventListener('input', () => {
+    state.noteContent = ta.value;
+    clearTimeout(timer);
+    timer = setTimeout(saveCurrentNote, 800);
+  });
+  main.append(ta, el('div', { class:'muted', style:'margin-top:8px' }, 'Markdown. Автосохранение через 0.8с.'));
+  app.append(header, main);
+}
+
+async function saveCurrentNote() {
+  if (!state.currentNote) return;
+  await saveNote(state.currentProject.id, state.currentNote, state.noteContent);
+}
+
+async function addProject() {
+  const name = prompt('Название проекта:');
+  if (!name || !name.trim()) return;
+  await createProject(name);
+  render();
+}
+
+async function addNote() {
+  const id = newNoteId();
+  await saveNote(state.currentProject.id, id, '# ' + id + '\n\n');
+  state.notes = await listNotes(state.currentProject.id);
+  await openNote(id);
+}
+
+async function deleteCurrentNote() {
+  if (!confirm('Удалить заметку?')) return;
+  await deleteNote(state.currentProject.id, state.currentNote);
+  state.currentNote = null; state.view = 'project';
+  state.notes = await listNotes(state.currentProject.id);
+  render();
+}
+
+// boot
+(async () => {
+  if (!navigator.storage || !navigator.storage.getDirectory) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:system-ui">Браузер не поддерживает OPFS. Нужен Safari iOS 15.2+ или Chrome.</div>';
+    return;
+  }
+  await render();
+})();
+</script>
+</body>
+</html>
