@@ -10,15 +10,9 @@
 <title>Portal</title>
 <style>
 :root {
-  --cream: #F4EBDD;
-  --graphite: #292724;
-  --lime: #DCEB32;
-  --coral: #F27691;
-  --sage: #687B59;
-  --paper: #FFFAF1;
-  --muted: #8B8478;
-  --line: #E5DACC;
-  --line-strong: #D4C7B3;
+  --cream: #F4EBDD; --graphite: #292724; --lime: #DCEB32;
+  --coral: #F27691; --sage: #687B59; --paper: #FFFAF1;
+  --muted: #8B8478; --line: #E5DACC; --line-strong: #D4C7B3;
   --shadow-sm: 0 1px 2px rgba(41,39,36,0.04);
   --shadow-md: 0 4px 16px rgba(41,39,36,0.06);
   --shadow-lg: 0 12px 32px rgba(41,39,36,0.08);
@@ -31,8 +25,7 @@ html, body {
 }
 body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); min-height: 100vh; }
 button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; padding: 0; }
-input, textarea { font: inherit; color: inherit; }
-
+input, textarea, select { font: inherit; color: inherit; }
 .app { max-width: 640px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
 
 .topbar { display: flex; align-items: center; gap: 12px; padding: 20px 20px 12px; }
@@ -40,13 +33,14 @@ input, textarea { font: inherit; color: inherit; }
 .topbar .icon-btn { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); box-shadow: var(--shadow-sm); flex-shrink: 0; }
 .topbar .icon-btn svg { width: 20px; height: 20px; }
 
+.tabs { display: flex; gap: 6px; padding: 0 20px 12px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; background: var(--paper); border: 1px solid var(--line); color: var(--graphite); white-space: nowrap; flex-shrink: 0; }
+.tab.active { background: var(--graphite); color: var(--paper); border-color: var(--graphite); }
+
 .content { padding: 8px 20px 120px; flex: 1; }
 
-.backup-banner {
-  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
-  background: var(--graphite); color: var(--paper); border-radius: 18px; margin-bottom: 20px;
-  transition: background .3s;
-}
+.backup-banner { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--graphite); color: var(--paper); border-radius: 18px; margin-bottom: 20px; }
 .backup-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); flex-shrink: 0; box-shadow: 0 0 0 3px rgba(220,235,50,0.2); }
 .backup-banner .btext { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
 .backup-banner .btext strong { font-weight: 600; display: block; font-size: 15px; margin-bottom: 2px; }
@@ -56,30 +50,17 @@ input, textarea { font: inherit; color: inherit; }
 .backup-banner.old .dot { background: var(--graphite); box-shadow: 0 0 0 3px rgba(41,39,36,0.2); }
 
 .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 24px 0 10px; }
+.projects, .notes, .tasks, .ideas-list { display: flex; flex-direction: column; gap: 10px; }
 
-.projects, .notes { display: flex; flex-direction: column; gap: 10px; }
-
-.project-card {
-  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-  background: var(--paper); border-radius: 20px; border: 1px solid var(--line);
-  transition: transform .15s, box-shadow .15s;
-  text-align: left; width: 100%;
-}
+.project-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--paper); border-radius: 20px; border: 1px solid var(--line); transition: transform .15s, box-shadow .15s; text-align: left; width: 100%; }
 .project-card:active { transform: scale(0.985); }
-.project-card .initial {
-  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
-  font-weight: 700; font-size: 18px; flex-shrink: 0;
-}
+.project-card .initial { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-weight: 700; font-size: 18px; flex-shrink: 0; }
 .project-card .meta { flex: 1; min-width: 0; }
 .project-card .pname { font-weight: 600; font-size: 16px; margin: 0 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.project-card .pinfo { font-size: 13px; color: var(--muted); }
+.project-card .pinfo { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .project-card .arrow { color: var(--line-strong); display: grid; place-items: center; }
 
-.note-card {
-  display: block; padding: 14px 16px; background: var(--paper); border-radius: 16px;
-  border: 1px solid var(--line); text-align: left; width: 100%;
-  transition: transform .15s;
-}
+.note-card { display: block; padding: 14px 16px; background: var(--paper); border-radius: 16px; border: 1px solid var(--line); text-align: left; width: 100%; transition: transform .15s; }
 .note-card:active { transform: scale(0.985); }
 .note-card .ntitle { font-weight: 600; font-size: 15px; margin: 0 0 4px; }
 .note-card .npreview { font-size: 13px; color: var(--muted); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -87,66 +68,90 @@ input, textarea { font: inherit; color: inherit; }
 .empty { text-align: center; padding: 48px 20px; }
 .empty .mark { display: inline-block; padding: 22px; background: var(--lime); border-radius: 24px; margin-bottom: 20px; }
 .empty .mark svg { width: 40px; height: 40px; display: block; }
-.empty p { color: var(--muted); font-size: 15px; margin: 0 auto 22px; max-width: 300px; line-height: 1.5; }
+.empty p { color: var(--muted); font-size: 15px; margin: 0 auto 22px; max-width: 320px; line-height: 1.5; }
 .empty .cta { padding: 14px 24px; border-radius: 14px; font-weight: 600; font-size: 15px; background: var(--graphite); color: var(--paper); }
 
-.fab {
-  position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom));
-  width: 60px; height: 60px; border-radius: 50%; background: var(--lime); color: var(--graphite);
-  display: grid; place-items: center;
-  box-shadow: 0 8px 24px rgba(220,235,50,0.5), 0 2px 8px rgba(41,39,36,0.12);
-  transition: transform .15s;
-  z-index: 40;
-}
+.fab { position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom)); width: 60px; height: 60px; border-radius: 50%; background: var(--lime); color: var(--graphite); display: grid; place-items: center; box-shadow: 0 8px 24px rgba(220,235,50,0.5), 0 2px 8px rgba(41,39,36,0.12); transition: transform .15s; z-index: 40; }
 .fab:active { transform: scale(0.92); }
 .fab svg { width: 28px; height: 28px; }
 
 .editor-wrap { padding: 0 20px; flex: 1; display: flex; flex-direction: column; }
-.editor {
-  width: 100%; min-height: 60vh; padding: 20px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 16px; line-height: 1.6;
-  border: 1px solid var(--line); border-radius: 20px;
-  background: var(--paper); resize: none; outline: none; color: var(--graphite);
-  transition: border-color .15s, box-shadow .15s;
-}
+.editor { width: 100%; min-height: 60vh; padding: 20px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 16px; line-height: 1.6; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); resize: none; outline: none; color: var(--graphite); transition: border-color .15s, box-shadow .15s; }
 .editor:focus { border-color: var(--line-strong); box-shadow: 0 0 0 3px rgba(220,235,50,0.2); }
 .editor::placeholder { color: var(--muted); }
 .save-status { padding: 14px 4px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .save-status .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); transition: background .2s; }
 .save-status.saving .sdot { background: var(--coral); }
 
-.modal-backdrop {
-  position: fixed; inset: 0; background: rgba(41,39,36,0.5);
-  display: grid; place-items: center; padding: 20px; z-index: 100;
-  animation: fadeIn .15s ease;
-}
-.modal {
-  background: var(--paper); border-radius: 24px; padding: 24px;
-  width: 100%; max-width: 400px; box-shadow: var(--shadow-lg);
-  animation: slideUp .2s ease;
-}
+.progress-wrap { margin: 8px 0 20px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+.progress-label strong { color: var(--graphite); }
+.progress-bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--lime); transition: width .3s; }
+
+.section-header { display: flex; align-items: center; gap: 8px; padding: 10px 4px 8px; margin-top: 12px; cursor: pointer; user-select: none; }
+.section-header h3 { margin: 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.section-header .count { font-size: 12px; color: var(--muted); }
+.section-header .chev { margin-left: auto; color: var(--muted); transition: transform .15s; }
+.section-header.collapsed .chev { transform: rotate(-90deg); }
+
+.task-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--paper); border-radius: 16px; border: 1px solid var(--line); }
+.task-card .tmeta { flex: 1; min-width: 0; }
+.task-card .ttitle { font-weight: 600; font-size: 15px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-card .tnote { font-size: 12px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-badge { padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
+.rs-planned { background: var(--cream); color: var(--graphite); border: 1px solid var(--line-strong); }
+.rs-progress { background: var(--sage); color: var(--paper); }
+.rs-test { background: var(--coral); color: var(--paper); }
+.rs-done { background: var(--lime); color: var(--graphite); }
+
+.idea-card { padding: 14px 16px; background: var(--paper); border-radius: 16px; border: 1px solid var(--line); }
+.idea-card .ihead { display: flex; align-items: center; gap: 10px; }
+.idea-card .prio { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.prio-low { background: var(--sage); }
+.prio-med { background: var(--coral); }
+.prio-high { background: var(--graphite); }
+.idea-card .ititle { font-weight: 600; flex: 1; font-size: 15px; }
+.idea-card .inote { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+.idea-card .iactions { margin-top: 10px; display: flex; gap: 8px; }
+.idea-card .iactions button { font-size: 13px; padding: 6px 12px; border-radius: 10px; font-weight: 600; }
+.i-promote { background: var(--lime); color: var(--graphite); }
+.i-edit { background: var(--cream); color: var(--graphite); border: 1px solid var(--line); }
+
+.arch-toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+.arch-toolbar button { padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; background: var(--paper); border: 1px solid var(--line); color: var(--graphite); }
+.arch-toolbar button.primary { background: var(--graphite); color: var(--paper); border-color: var(--graphite); }
+.arch-frame { width: 100%; height: 70vh; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+.arch-pre { width: 100%; min-height: 50vh; padding: 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; white-space: pre-wrap; overflow-wrap: break-word; }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(41,39,36,0.5); display: grid; place-items: center; padding: 20px; z-index: 100; animation: fadeIn .15s ease; }
+.modal { background: var(--paper); border-radius: 24px; padding: 24px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); animation: slideUp .2s ease; }
 .modal h3 { margin: 0 0 16px; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
 .modal p { margin: 0 0 20px; color: var(--muted); font-size: 15px; line-height: 1.5; }
-.modal input {
-  width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line);
-  background: var(--cream); font-size: 16px; outline: none; margin-bottom: 16px;
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px; }
+.field input, .field textarea, .field select {
+  width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--cream); font-size: 15px; outline: none; color: var(--graphite);
+  transition: border-color .15s;
 }
-.modal input:focus { border-color: var(--graphite); }
-.modal-actions { display: flex; gap: 8px; }
+.field textarea { min-height: 80px; resize: vertical; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--graphite); }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
 .modal-actions button { flex: 1; padding: 14px; border-radius: 14px; font-weight: 600; font-size: 15px; }
 .btn-primary { background: var(--graphite); color: var(--paper); }
 .btn-secondary { background: var(--cream); color: var(--graphite); border: 1px solid var(--line); }
 .btn-danger { background: var(--coral); color: var(--paper); }
 
-.toast {
-  position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  padding: 12px 20px; background: var(--graphite); color: var(--paper);
-  border-radius: 999px; font-size: 14px; font-weight: 500;
-  box-shadow: var(--shadow-lg); z-index: 200;
-  animation: slideUp .2s ease; white-space: nowrap;
-}
+.sheet-backdrop { position: fixed; inset: 0; background: rgba(41,39,36,0.5); display: flex; align-items: flex-end; justify-content: center; z-index: 100; animation: fadeIn .15s ease; }
+.sheet { background: var(--paper); border-radius: 24px 24px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); width: 100%; max-width: 640px; animation: slideUp .2s ease; }
+.sheet h3 { margin: 4px 8px 12px; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.sheet button.sheet-item { display: block; width: 100%; text-align: left; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 500; }
+.sheet button.sheet-item:active { background: var(--cream); }
+.sheet button.sheet-item.danger { color: var(--coral); }
+.sheet .sheet-cancel { display: block; width: 100%; text-align: center; margin-top: 8px; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 600; background: var(--cream); }
+
+.toast { position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 12px 20px; background: var(--graphite); color: var(--paper); border-radius: 999px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lg); z-index: 200; animation: slideUp .2s ease; white-space: nowrap; }
 
 .c0 { background: var(--lime); color: var(--graphite); }
 .c1 { background: var(--coral); color: var(--paper); }
@@ -156,24 +161,28 @@ input, textarea { font: inherit; color: inherit; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-@media (hover: hover) {
-  .project-card:hover, .note-card:hover { box-shadow: var(--shadow-md); }
-  .bbtn:hover { filter: brightness(0.95); }
-  .fab:hover { transform: scale(1.05); }
-}
 </style>
 </head>
 <body>
 <div id="app" class="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <script>
-const state = { view:'list', projects:[], currentProject:null, notes:[], currentNote:null, noteContent:'' };
+const ROADMAP_STATUSES = ['planned', 'in-progress', 'in-test', 'done'];
+const ROADMAP_LABELS = { planned:'План', 'in-progress':'В работе', 'in-test':'В тесте', done:'Готово' };
+const ROADMAP_CLASSES = { planned:'rs-planned', 'in-progress':'rs-progress', 'in-test':'rs-test', done:'rs-done' };
+const PRIO_LABELS = { low:'Низкий', med:'Средний', high:'Высокий' };
+
+const state = {
+  view:'list', projects:[], currentProject:null, currentTab:'notes',
+  notes:[], currentNote:null, noteContent:'',
+  roadmap:{ items:[] }, ideas:{ items:[] }, architecture:null,
+  collapsed:{ done:true }
+};
 
 const root = () => navigator.storage.getDirectory();
 const projectsDir = async (create=true) => (await root()).getDirectoryHandle('projects', { create });
-const projectDir  = async (id, create=false) => (await projectsDir()).getDirectoryHandle(id, { create });
-const notesDir    = async (id, create=false) => (await projectDir(id)).getDirectoryHandle('notes', { create });
+const projectDir = async (id, create=false) => (await projectsDir()).getDirectoryHandle(id, { create });
+const notesDir = async (id, create=false) => (await projectDir(id)).getDirectoryHandle('notes', { create });
 const readJSON = async h => JSON.parse(await (await h.getFile()).text());
 async function writeFile(h, text) { const w = await h.createWritable(); await w.write(text); await w.close(); }
 
@@ -195,9 +204,38 @@ async function createProject(name) {
   const id = base + '-' + Date.now().toString(36);
   const dir = await projectDir(id, true);
   const mh = await dir.getFileHandle('project.json', { create: true });
-  const meta = { name: name.trim(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const meta = {
+    name: name.trim(), purpose:'', status:'active', currentFocus:'',
+    stack:[], links:[], tags:[],
+    createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+  };
   await writeFile(mh, JSON.stringify(meta, null, 2));
   return { id, ...meta };
+}
+
+async function readProjectMeta(id) {
+  try { return await readJSON(await (await projectDir(id)).getFileHandle('project.json')); }
+  catch { return { name:id, purpose:'', status:'active', currentFocus:'', stack:[], links:[], tags:[] }; }
+}
+
+async function writeProjectMeta(id, meta) {
+  meta.updatedAt = new Date().toISOString();
+  const fh = await (await projectDir(id, true)).getFileHandle('project.json', { create:true });
+  await writeFile(fh, JSON.stringify(meta, null, 2));
+}
+
+async function touchProject(id) {
+  try {
+    const fh = await (await projectDir(id)).getFileHandle('project.json');
+    const meta = JSON.parse(await (await fh.getFile()).text());
+    meta.updatedAt = new Date().toISOString();
+    await writeFile(fh, JSON.stringify(meta, null, 2));
+  } catch {}
+}
+
+async function deleteProject(id) {
+  const dir = await projectsDir();
+  await dir.removeEntry(id, { recursive:true });
 }
 
 async function listNotes(projectId) {
@@ -205,7 +243,7 @@ async function listNotes(projectId) {
   const out = [];
   for await (const [name, h] of dir) {
     if (h.kind !== 'file' || !name.endsWith('.md')) continue;
-    out.push({ id: name.slice(0,-3), text: await (await h.getFile()).text() });
+    out.push({ id:name.slice(0,-3), text: await (await h.getFile()).text() });
   }
   out.sort((a,b) => b.id.localeCompare(a.id));
   return out;
@@ -218,25 +256,61 @@ async function readNote(projectId, noteId) {
 
 async function saveNote(projectId, noteId, text) {
   const dir = await notesDir(projectId, true);
-  const fh = await dir.getFileHandle(noteId + '.md', { create: true });
+  const fh = await dir.getFileHandle(noteId + '.md', { create:true });
   await writeFile(fh, text);
-  try {
-    const pd = await projectDir(projectId);
-    const mh = await pd.getFileHandle('project.json');
-    const meta = await readJSON(mh);
-    meta.updatedAt = new Date().toISOString();
-    await writeFile(mh, JSON.stringify(meta, null, 2));
-  } catch {}
+  await touchProject(projectId);
 }
 
 async function deleteNote(projectId, noteId) {
   await (await notesDir(projectId)).removeEntry(noteId + '.md');
+  await touchProject(projectId);
 }
 
 function newNoteId() {
   const d = new Date(); const p = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}`;
 }
+
+async function readRoadmap(id) {
+  try { return JSON.parse(await (await (await projectDir(id)).getFileHandle('roadmap.json')).getFile().then(f=>f.text())); }
+  catch { return { items:[] }; }
+}
+async function writeRoadmap(id, data) {
+  const fh = await (await projectDir(id, true)).getFileHandle('roadmap.json', { create:true });
+  await writeFile(fh, JSON.stringify(data, null, 2));
+  await touchProject(id);
+}
+async function readIdeas(id) {
+  try { return JSON.parse(await (await (await projectDir(id)).getFileHandle('ideas.json')).getFile().then(f=>f.text())); }
+  catch { return { items:[] }; }
+}
+async function writeIdeas(id, data) {
+  const fh = await (await projectDir(id, true)).getFileHandle('ideas.json', { create:true });
+  await writeFile(fh, JSON.stringify(data, null, 2));
+  await touchProject(id);
+}
+
+async function readArchitecture(id) {
+  const dir = await projectDir(id);
+  for (const name of ['architecture.html','architecture.md','architecture.txt']) {
+    try {
+      const fh = await dir.getFileHandle(name);
+      return { name, content: await (await fh.getFile()).text() };
+    } catch {}
+  }
+  return null;
+}
+async function saveArchitecture(id, name, content) {
+  const dir = await projectDir(id, true);
+  for (const old of ['architecture.html','architecture.md','architecture.txt']) {
+    try { await dir.removeEntry(old); } catch {}
+  }
+  const fh = await dir.getFileHandle(name, { create:true });
+  await writeFile(fh, content);
+  await touchProject(id);
+}
+
+function uid() { return 't_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 async function collectAll(dir, prefix, out) {
   for await (const [name, h] of dir) {
@@ -250,8 +324,7 @@ async function exportBackup() {
   const files = {};
   if (pd) await collectAll(pd, 'projects/', files);
   files['manifest.json'] = fflate.strToU8(JSON.stringify({
-    format:'project-portal-backup', version:1,
-    createdAt:new Date().toISOString(), scope:'all'
+    format:'project-portal-backup', version:2, createdAt:new Date().toISOString(), scope:'all'
   }, null, 2));
   const zipped = fflate.zipSync(files, { level: 6 });
   const filename = `portal-${new Date().toISOString().slice(0,10)}.zip`;
@@ -285,7 +358,6 @@ function el(tag, props={}, ...children) {
   for (const c of children) if (c != null) e.append(typeof c === 'string' ? document.createTextNode(c) : c);
   return e;
 }
-
 function svg(path, opts={}) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   s.setAttribute('viewBox', '0 0 24 24');
@@ -299,44 +371,79 @@ function svg(path, opts={}) {
 }
 
 function toast(msg) {
-  const t = el('div', { class: 'toast' }, msg);
+  const t = el('div', { class:'toast' }, msg);
   document.body.appendChild(t);
-  setTimeout(() => {
-    t.style.transition = 'opacity .3s'; t.style.opacity = '0';
-    setTimeout(() => t.remove(), 300);
-  }, 2000);
+  setTimeout(() => { t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2000);
 }
 
 function colorClass(i) { return 'c' + (i % 5); }
-function initials(name) { return (name || '?').trim().slice(0, 1).toUpperCase(); }
+function initials(name) { return (name || '?').trim().slice(0,1).toUpperCase(); }
 function daysSince(iso) { return iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null; }
 
-function openModal({ title, text, input, inputPlaceholder='', confirmText='OK', danger=false, onConfirm }) {
+function closeTop() {
+  const b = document.querySelector('.modal-backdrop, .sheet-backdrop');
+  if (b) b.remove();
+}
+
+function openModal({ title, text, fields=[], confirmText='OK', danger=false, onSubmit }) {
   if (document.querySelector('.modal-backdrop')) return;
-  const backdrop = el('div', { class: 'modal-backdrop' });
-  const modal = el('div', { class: 'modal' });
+  const backdrop = el('div', { class:'modal-backdrop' });
+  const modal = el('div', { class:'modal' });
   modal.append(el('h3', {}, title));
   if (text) modal.append(el('p', {}, text));
-  let inp = null;
-  if (input) {
-    inp = el('input', { type: 'text', placeholder: inputPlaceholder });
-    modal.append(inp);
+  const inputs = {};
+  for (const f of fields) {
+    const wrap = el('div', { class:'field' });
+    wrap.append(el('label', {}, f.label));
+    let inp;
+    if (f.type === 'textarea') {
+      inp = el('textarea', { placeholder: f.placeholder||'' });
+      inp.value = f.value || '';
+    } else if (f.type === 'select') {
+      inp = el('select', {});
+      for (const o of f.options) {
+        const opt = el('option', { value:o.value }, o.label);
+        if (o.value === f.value) opt.selected = true;
+        inp.append(opt);
+      }
+    } else {
+      inp = el('input', { type:'text', placeholder: f.placeholder||'' });
+      inp.value = f.value || '';
+    }
+    inputs[f.name] = inp;
+    wrap.append(inp);
+    modal.append(wrap);
   }
-  const actions = el('div', { class: 'modal-actions' });
+  const actions = el('div', { class:'modal-actions' });
   actions.append(
-    el('button', { class: 'btn-secondary', onclick: () => backdrop.remove() }, 'Отмена'),
+    el('button', { class:'btn-secondary', onclick: () => backdrop.remove() }, 'Отмена'),
     el('button', { class: danger ? 'btn-danger' : 'btn-primary', onclick: () => {
-      const v = inp ? inp.value.trim() : true;
-      if (inp && !v) { inp.focus(); return; }
+      const vals = {};
+      for (const [k, inp] of Object.entries(inputs)) vals[k] = inp.value;
       backdrop.remove();
-      onConfirm(v);
+      onSubmit(vals);
     }}, confirmText)
   );
   modal.append(actions);
   backdrop.append(modal);
   backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
   document.body.appendChild(backdrop);
-  if (inp) setTimeout(() => inp.focus(), 50);
+  const first = Object.values(inputs)[0];
+  if (first) setTimeout(() => first.focus(), 50);
+}
+
+function openActionSheet({ title, actions }) {
+  if (document.querySelector('.sheet-backdrop')) return;
+  const backdrop = el('div', { class:'sheet-backdrop' });
+  const sheet = el('div', { class:'sheet' });
+  sheet.append(el('h3', {}, title || ''));
+  for (const a of actions) {
+    sheet.append(el('button', { class:'sheet-item' + (a.danger?' danger':''), onclick: () => { backdrop.remove(); a.onClick(); } }, a.label));
+  }
+  sheet.append(el('button', { class:'sheet-cancel', onclick: () => backdrop.remove() }, 'Отмена'));
+  backdrop.append(sheet);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
+  document.body.appendChild(backdrop);
 }
 
 const app = document.getElementById('app');
@@ -349,16 +456,13 @@ async function render() {
 }
 
 function bigCheck() {
-  return el('div', { class: 'mark' },
-    svg('<polyline points="20 6 9 17 4 12"/>', { sw:'2.5' })
-  );
+  return el('div', { class:'mark' }, svg('<polyline points="20 6 9 17 4 12"/>', { sw:'2.5' }));
 }
 
 async function renderList() {
   state.projects = await listProjects();
-
-  const topbar = el('div', { class: 'topbar' }, el('h1', {}, 'Проекты'));
-  const content = el('div', { class: 'content' });
+  const topbar = el('div', { class:'topbar' }, el('h1', {}, 'Проекты'));
+  const content = el('div', { class:'content' });
 
   const lastBackup = localStorage.getItem('lastBackup');
   const days = daysSince(lastBackup);
@@ -368,90 +472,519 @@ async function renderList() {
   else if (days === 0) btext = 'Сегодня';
   else if (days === 1) btext = 'Вчера';
   else btext = `${days} дн. назад`;
-  content.append(
-    el('div', { class: 'backup-banner' + (isOld ? ' old' : '') },
-      el('div', { class: 'dot' }),
-      el('div', { class: 'btext' },
-        el('strong', {}, isOld ? 'Пора сделать бэкап' : 'Всё сохранено'),
-        el('span', {}, 'Последний: ' + btext)
-      ),
-      el('button', { class: 'bbtn', onclick: exportBackup }, 'Бэкап')
-    )
-  );
+  content.append(el('div', { class:'backup-banner' + (isOld?' old':'') },
+    el('div', { class:'dot' }),
+    el('div', { class:'btext' },
+      el('strong', {}, isOld ? 'Пора сделать бэкап' : 'Всё сохранено'),
+      el('span', {}, 'Последний: ' + btext)
+    ),
+    el('button', { class:'bbtn', onclick: exportBackup }, 'Бэкап')
+  ));
 
   if (!state.projects.length) {
-    content.append(
-      el('div', { class: 'empty' },
-        bigCheck(),
-        el('p', {}, 'Создайте первый проект, чтобы складывать в него заметки, идеи и архитектуру.'),
-        el('button', { class: 'cta', onclick: addProject }, 'Создать проект')
-      )
-    );
+    content.append(el('div', { class:'empty' },
+      bigCheck(),
+      el('p', {}, 'Создайте первый проект, чтобы складывать в него заметки, роадмап, архитектуру и идеи.'),
+      el('button', { class:'cta', onclick: addProject }, 'Создать проект')
+    ));
   } else {
-    content.append(el('div', { class: 'section-title' }, 'Все проекты · ' + state.projects.length));
-    const list = el('div', { class: 'projects' });
+    content.append(el('div', { class:'section-title' }, 'Все проекты · ' + state.projects.length));
+    const list = el('div', { class:'projects' });
     state.projects.forEach((p, i) => {
-      list.append(el('button', { class: 'project-card', onclick: () => openProject(p.id) },
-        el('div', { class: 'initial ' + colorClass(i) }, initials(p.name || p.id)),
-        el('div', { class: 'meta' },
-          el('div', { class: 'pname' }, p.name || p.id),
-          el('div', { class: 'pinfo' }, p.updatedAt ? 'изм. ' + p.updatedAt.slice(0,10) : 'без изменений')
+      const sub = p.currentFocus || p.purpose || (p.updatedAt ? 'изм. ' + p.updatedAt.slice(0,10) : '');
+      list.append(el('button', { class:'project-card', onclick: () => openProject(p.id) },
+        el('div', { class:'initial ' + colorClass(i) }, initials(p.name || p.id)),
+        el('div', { class:'meta' },
+          el('div', { class:'pname' }, p.name || p.id),
+          el('div', { class:'pinfo' }, sub)
         ),
-        el('div', { class: 'arrow' }, svg('<polyline points="9 6 15 12 9 18"/>', { sw:'1.5' }))
+        el('div', { class:'arrow' }, svg('<polyline points="9 6 15 12 9 18"/>', { sw:'1.5' }))
       ));
     });
     content.append(list);
   }
 
   app.append(topbar, content);
-  app.append(el('button', { class: 'fab', onclick: addProject },
+  app.append(el('button', { class:'fab', onclick: addProject },
     svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
   ));
 }
 
 async function openProject(id) {
-  state.currentProject = state.projects.find(p => p.id === id) || { id, name:id };
-  state.notes = await listNotes(id);
+  const meta = await readProjectMeta(id);
+  state.currentProject = { id, ...meta };
+  state.currentTab = 'notes';
+  state.collapsed = { done:true };
+  await reloadProjectData();
   state.view = 'project';
   render();
 }
 
+async function reloadProjectData() {
+  const id = state.currentProject.id;
+  state.notes = await listNotes(id);
+  state.roadmap = await readRoadmap(id);
+  state.ideas = await readIdeas(id);
+  state.architecture = await readArchitecture(id);
+}
+
+function switchTab(tab) { state.currentTab = tab; render(); }
+
 async function renderProject() {
   const p = state.currentProject;
-  const topbar = el('div', { class: 'topbar' },
-    el('button', { class: 'icon-btn', onclick: () => { state.view='list'; render(); } },
+  const topbar = el('div', { class:'topbar' },
+    el('button', { class:'icon-btn', onclick: () => { state.view='list'; render(); } },
       svg('<polyline points="15 6 9 12 15 18"/>', { sw:'2.2' })
     ),
-    el('h1', {}, p.name || p.id)
+    el('h1', {}, p.name || p.id),
+    el('button', { class:'icon-btn', onclick: projectMenu },
+      svg('<circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/>')
+    )
   );
-  const content = el('div', { class: 'content' });
 
+  const tabs = el('div', { class:'tabs' });
+  const tabDefs = [
+    ['notes','Заметки'], ['roadmap','Роадмап'], ['architecture','Архитектура'], ['ideas','Идеи']
+  ];
+  for (const [key, label] of tabDefs) {
+    tabs.append(el('button', {
+      class:'tab' + (state.currentTab===key?' active':''),
+      onclick: () => switchTab(key)
+    }, label));
+  }
+
+  const content = el('div', { class:'content' });
+  app.append(topbar, tabs, content);
+
+  if (state.currentTab === 'notes') renderNotesTab(content);
+  else if (state.currentTab === 'roadmap') renderRoadmapTab(content);
+  else if (state.currentTab === 'architecture') renderArchitectureTab(content);
+  else if (state.currentTab === 'ideas') renderIdeasTab(content);
+}
+
+function projectMenu() {
+  openActionSheet({
+    title: state.currentProject.name || state.currentProject.id,
+    actions: [
+      { label:'Настройки проекта', onClick: openProjectSettings },
+      { label:'Удалить проект', danger:true, onClick: confirmDeleteProject }
+    ]
+  });
+}
+
+function openProjectSettings() {
+  const p = state.currentProject;
+  openModal({
+    title:'Настройки проекта',
+    confirmText:'Сохранить',
+    fields: [
+      { name:'purpose', label:'Назначение', type:'textarea', value:p.purpose||'', placeholder:'Что это и зачем в двух словах' },
+      { name:'status', label:'Статус', type:'select', value:p.status||'active', options:[
+        { value:'active', label:'Активный' },
+        { value:'paused', label:'Пауза' },
+        { value:'idea', label:'Идея' },
+        { value:'archived', label:'Архив' }
+      ]},
+      { name:'currentFocus', label:'Текущий фокус', type:'text', value:p.currentFocus||'', placeholder:'Над чем работаю прямо сейчас' },
+      { name:'stack', label:'Стек (через запятую)', type:'text', value:(p.stack||[]).join(', '), placeholder:'React, Vite, OPFS' },
+      { name:'tags', label:'Теги (через запятую)', type:'text', value:(p.tags||[]).join(', '), placeholder:'web, tools' },
+      { name:'links', label:'Ссылки (label | url, по одной в строке)', type:'textarea', value:(p.links||[]).map(l => `${l.label} | ${l.url}`).join('\n'), placeholder:'GitHub | https://github.com/...' }
+    ],
+    onSubmit: async (vals) => {
+      const links = vals.links.split('\n').map(s => s.trim()).filter(Boolean).map(line => {
+        const [label, ...rest] = line.split('|');
+        return { label:(label||'').trim(), url:(rest.join('|')||'').trim() };
+      }).filter(l => l.url);
+      const meta = {
+        ...state.currentProject,
+        purpose: vals.purpose.trim(),
+        status: vals.status,
+        currentFocus: vals.currentFocus.trim(),
+        stack: vals.stack.split(',').map(s=>s.trim()).filter(Boolean),
+        tags: vals.tags.split(',').map(s=>s.trim()).filter(Boolean),
+        links
+      };
+      delete meta.id;
+      await writeProjectMeta(state.currentProject.id, meta);
+      state.currentProject = { id: state.currentProject.id, ...meta };
+      toast('Сохранено');
+      render();
+    }
+  });
+}
+
+function confirmDeleteProject() {
+  openModal({
+    title:'Удалить проект?',
+    text:'Все заметки, роадмап, идеи и архитектура проекта будут удалены без возможности восстановления.',
+    confirmText:'Удалить',
+    danger:true,
+    onSubmit: async () => {
+      await deleteProject(state.currentProject.id);
+      state.currentProject = null;
+      state.view = 'list';
+      toast('Проект удалён');
+      render();
+    }
+  });
+}
+
+function renderNotesTab(content) {
   if (!state.notes.length) {
-    content.append(
-      el('div', { class: 'empty' },
-        bigCheck(),
-        el('p', {}, 'В этом проекте пока нет заметок. Первая сохранится автоматически.'),
-        el('button', { class: 'cta', onclick: addNote }, 'Новая заметка')
-      )
-    );
+    content.append(el('div', { class:'empty' },
+      bigCheck(),
+      el('p', {}, 'В этом проекте пока нет заметок. Первая сохранится автоматически.'),
+      el('button', { class:'cta', onclick: addNote }, 'Новая заметка')
+    ));
   } else {
-    content.append(el('div', { class: 'section-title' }, 'Заметки · ' + state.notes.length));
-    const list = el('div', { class: 'notes' });
+    content.append(el('div', { class:'section-title' }, 'Заметки · ' + state.notes.length));
+    const list = el('div', { class:'notes' });
     for (const n of state.notes) {
       const body = n.text.replace(/^#.*$/m,'').replace(/[#*_`>]/g,'').trim();
       const preview = body.slice(0,140) || 'Пусто';
-      list.append(el('button', { class: 'note-card', onclick: () => openNote(n.id) },
-        el('div', { class: 'ntitle' }, n.id),
-        el('div', { class: 'npreview' }, preview)
+      list.append(el('button', { class:'note-card', onclick: () => openNote(n.id) },
+        el('div', { class:'ntitle' }, n.id),
+        el('div', { class:'npreview' }, preview)
       ));
     }
     content.append(list);
   }
-
-  app.append(topbar, content);
-  app.append(el('button', { class: 'fab', onclick: addNote },
+  app.append(el('button', { class:'fab', onclick: addNote },
     svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
   ));
+}
+
+function renderRoadmapTab(content) {
+  const items = state.roadmap.items || [];
+  const total = items.length;
+  const done = items.filter(i => i.status === 'done').length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  content.append(el('div', { class:'progress-wrap' },
+    el('div', { class:'progress-label' },
+      el('span', {}, 'Прогресс'),
+      el('span', {}, el('strong', {}, `${done} / ${total}`), ' готово')
+    ),
+    el('div', { class:'progress-bar' },
+      el('div', { class:'progress-fill', style:`width:${pct}%` })
+    )
+  ));
+
+  const groups = { 'in-progress':[], 'in-test':[], planned:[], done:[] };
+  for (const it of items) (groups[it.status] || groups.planned).push(it);
+
+  const sectionOrder = ['in-progress','in-test','planned','done'];
+  for (const key of sectionOrder) {
+    const list = groups[key];
+    if (!list.length) continue;
+    const isCollapsed = state.collapsed[key] === true;
+    const header = el('div', { class:'section-header' + (isCollapsed?' collapsed':''), onclick: () => {
+      state.collapsed[key] = !state.collapsed[key];
+      render();
+    }},
+      el('h3', {}, ROADMAP_LABELS[key]),
+      el('span', { class:'count' }, String(list.length)),
+      el('span', { class:'chev' }, svg('<polyline points="6 9 12 15 18 9"/>', { sw:'2' }))
+    );
+    content.append(header);
+    if (!isCollapsed) {
+      const wrapper = el('div', { class:'tasks' });
+      for (const it of list) {
+        const badge = el('button', {
+          class:'task-badge ' + ROADMAP_CLASSES[it.status],
+          onclick: (e) => { e.stopPropagation(); cycleTaskStatus(it.id); }
+        }, ROADMAP_LABELS[it.status]);
+        const card = el('div', { class:'task-card', onclick: () => editTask(it.id) },
+          el('div', { class:'tmeta' },
+            el('div', { class:'ttitle' }, it.title),
+            it.note ? el('div', { class:'tnote' }, it.note) : null
+          ),
+          badge
+        );
+        wrapper.append(card);
+      }
+      content.append(wrapper);
+    }
+  }
+
+  if (!total) {
+    content.append(el('div', { class:'empty', style:'padding:32px 20px' },
+      bigCheck(),
+      el('p', {}, 'Пока нет задач. Добавьте первую — и отмечайте статус одним тапом.'),
+      el('button', { class:'cta', onclick: addTask }, 'Добавить задачу')
+    ));
+  }
+
+  app.append(el('button', { class:'fab', onclick: addTask },
+    svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
+  ));
+}
+
+async function cycleTaskStatus(id) {
+  const it = state.roadmap.items.find(x => x.id === id);
+  if (!it) return;
+  const i = ROADMAP_STATUSES.indexOf(it.status);
+  it.status = ROADMAP_STATUSES[(i + 1) % ROADMAP_STATUSES.length];
+  it.updatedAt = new Date().toISOString();
+  await writeRoadmap(state.currentProject.id, state.roadmap);
+  render();
+}
+
+function addTask() {
+  openModal({
+    title:'Новая задача',
+    confirmText:'Добавить',
+    fields: [
+      { name:'title', label:'Название', type:'text', placeholder:'Что сделать' },
+      { name:'note', label:'Заметка', type:'textarea', placeholder:'Детали (необязательно)' }
+    ],
+    onSubmit: async (vals) => {
+      if (!vals.title.trim()) return;
+      const it = {
+        id: uid(), title: vals.title.trim(), note: vals.note.trim(),
+        status:'planned', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+      };
+      state.roadmap.items.unshift(it);
+      await writeRoadmap(state.currentProject.id, state.roadmap);
+      toast('Задача добавлена');
+      render();
+    }
+  });
+}
+
+function editTask(id) {
+  const it = state.roadmap.items.find(x => x.id === id);
+  if (!it) return;
+  openActionSheet({
+    title: it.title,
+    actions: [
+      { label:'Редактировать', onClick: () => openTaskEditor(it) },
+      { label:'Удалить задачу', danger:true, onClick: () => confirmDeleteTask(it.id) }
+    ]
+  });
+}
+
+function openTaskEditor(it) {
+  openModal({
+    title:'Редактировать задачу',
+    confirmText:'Сохранить',
+    fields: [
+      { name:'title', label:'Название', type:'text', value:it.title },
+      { name:'note', label:'Заметка', type:'textarea', value:it.note || '' }
+    ],
+    onSubmit: async (vals) => {
+      if (!vals.title.trim()) return;
+      it.title = vals.title.trim();
+      it.note = vals.note.trim();
+      it.updatedAt = new Date().toISOString();
+      await writeRoadmap(state.currentProject.id, state.roadmap);
+      toast('Сохранено');
+      render();
+    }
+  });
+}
+
+function confirmDeleteTask(id) {
+  openModal({
+    title:'Удалить задачу?',
+    confirmText:'Удалить',
+    danger:true,
+    onSubmit: async () => {
+      state.roadmap.items = state.roadmap.items.filter(x => x.id !== id);
+      await writeRoadmap(state.currentProject.id, state.roadmap);
+      toast('Удалено');
+      render();
+    }
+  });
+}
+
+function renderIdeasTab(content) {
+  const items = state.ideas.items || [];
+  if (!items.length) {
+    content.append(el('div', { class:'empty' },
+      bigCheck(),
+      el('p', {}, 'Здесь живут идеи, которые ещё не стали задачами. Когда созреет — перенесите в роадмап.'),
+      el('button', { class:'cta', onclick: addIdea }, 'Добавить идею')
+    ));
+  } else {
+    const list = el('div', { class:'ideas-list' });
+    for (const it of items) {
+      const prioCls = it.priority === 'high' ? 'prio-high' : it.priority === 'low' ? 'prio-low' : 'prio-med';
+      list.append(el('div', { class:'idea-card' },
+        el('div', { class:'ihead' },
+          el('div', { class:'prio ' + prioCls }),
+          el('div', { class:'ititle' }, it.title),
+          el('div', { style:'color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.05em;font-weight:700' }, PRIO_LABELS[it.priority] || '')
+        ),
+        it.note ? el('div', { class:'inote' }, it.note) : null,
+        el('div', { class:'iactions' },
+          el('button', { class:'i-promote', onclick: () => promoteIdea(it.id) }, '→ В роадмап'),
+          el('button', { class:'i-edit', onclick: () => editIdea(it.id) }, 'Изменить')
+        )
+      ));
+    }
+    content.append(list);
+  }
+  app.append(el('button', { class:'fab', onclick: addIdea },
+    svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
+  ));
+}
+
+function addIdea() {
+  openModal({
+    title:'Новая идея',
+    confirmText:'Добавить',
+    fields: [
+      { name:'title', label:'Идея', type:'text', placeholder:'Коротко' },
+      { name:'note', label:'Детали', type:'textarea', placeholder:'Необязательно' },
+      { name:'priority', label:'Приоритет', type:'select', value:'med', options:[
+        { value:'low', label:'Низкий' },
+        { value:'med', label:'Средний' },
+        { value:'high', label:'Высокий' }
+      ]}
+    ],
+    onSubmit: async (vals) => {
+      if (!vals.title.trim()) return;
+      state.ideas.items.unshift({
+        id: uid(), title: vals.title.trim(), note: vals.note.trim(),
+        priority: vals.priority, createdAt: new Date().toISOString()
+      });
+      await writeIdeas(state.currentProject.id, state.ideas);
+      toast('Идея добавлена');
+      render();
+    }
+  });
+}
+
+function editIdea(id) {
+  const it = state.ideas.items.find(x => x.id === id);
+  if (!it) return;
+  openActionSheet({
+    title: it.title,
+    actions: [
+      { label:'Редактировать', onClick: () => openIdeaEditor(it) },
+      { label:'Удалить идею', danger:true, onClick: () => confirmDeleteIdea(it.id) }
+    ]
+  });
+}
+
+function openIdeaEditor(it) {
+  openModal({
+    title:'Редактировать идею',
+    confirmText:'Сохранить',
+    fields: [
+      { name:'title', label:'Идея', type:'text', value:it.title },
+      { name:'note', label:'Детали', type:'textarea', value:it.note || '' },
+      { name:'priority', label:'Приоритет', type:'select', value:it.priority, options:[
+        { value:'low', label:'Низкий' },
+        { value:'med', label:'Средний' },
+        { value:'high', label:'Высокий' }
+      ]}
+    ],
+    onSubmit: async (vals) => {
+      if (!vals.title.trim()) return;
+      it.title = vals.title.trim();
+      it.note = vals.note.trim();
+      it.priority = vals.priority;
+      await writeIdeas(state.currentProject.id, state.ideas);
+      toast('Сохранено');
+      render();
+    }
+  });
+}
+
+function confirmDeleteIdea(id) {
+  openModal({
+    title:'Удалить идею?',
+    confirmText:'Удалить',
+    danger:true,
+    onSubmit: async () => {
+      state.ideas.items = state.ideas.items.filter(x => x.id !== id);
+      await writeIdeas(state.currentProject.id, state.ideas);
+      toast('Удалено');
+      render();
+    }
+  });
+}
+
+async function promoteIdea(id) {
+  const it = state.ideas.items.find(x => x.id === id);
+  if (!it) return;
+  state.ideas.items = state.ideas.items.filter(x => x.id !== id);
+  state.roadmap.items.unshift({
+    id: uid(), title: it.title, note: it.note || '',
+    status:'planned', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
+  });
+  await writeIdeas(state.currentProject.id, state.ideas);
+  await writeRoadmap(state.currentProject.id, state.roadmap);
+  toast('Перенесено в роадмап');
+  state.currentTab = 'roadmap';
+  render();
+}
+
+function renderArchitectureTab(content) {
+  const arch = state.architecture;
+  if (!arch) {
+    content.append(el('div', { class:'empty' },
+      bigCheck(),
+      el('p', {}, 'Загрузите файл архитектуры (.html, .md или .txt). HTML будет показан изолированно.'),
+      el('button', { class:'cta', onclick: pickArchitectureFile }, 'Загрузить файл')
+    ));
+    return;
+  }
+  const isHtml = arch.name.endsWith('.html');
+  const toolbar = el('div', { class:'arch-toolbar' });
+  toolbar.append(
+    el('button', { onclick: pickArchitectureFile }, 'Заменить'),
+    el('button', { onclick: downloadArchitecture }, 'Скачать')
+  );
+  content.append(toolbar);
+
+  if (isHtml) {
+    const frame = document.createElement('iframe');
+    frame.className = 'arch-frame';
+    frame.setAttribute('sandbox', 'allow-scripts');
+    frame.srcdoc = arch.content;
+    content.append(frame);
+  } else {
+    const pre = el('div', { class:'arch-pre' });
+    pre.textContent = arch.content;
+    content.append(pre);
+  }
+}
+
+function pickArchitectureFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.html,.htm,.md,.txt,text/html,text/markdown,text/plain';
+  inp.onchange = async () => {
+    const f = inp.files[0];
+    if (!f) return;
+    const content = await f.text();
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    const name = 'architecture.' + (['html','htm'].includes(ext) ? 'html' : ext === 'md' ? 'md' : 'txt');
+    await saveArchitecture(state.currentProject.id, name, content);
+    state.architecture = { name, content };
+    toast('Архитектура обновлена');
+    render();
+  };
+  inp.click();
+}
+
+function downloadArchitecture() {
+  const a = state.architecture;
+  if (!a) return;
+  const blob = new Blob([a.content], { type: a.name.endsWith('.html') ? 'text/html' : 'text/plain' });
+  const file = new File([blob], a.name);
+  if (navigator.canShare && navigator.canShare({ files:[file] })) {
+    navigator.share({ files:[file], title:a.name }).catch(()=>{});
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = a.name;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 async function openNote(noteId) {
@@ -462,28 +995,22 @@ async function openNote(noteId) {
 }
 
 function renderNote() {
-  const topbar = el('div', { class: 'topbar' },
-    el('button', { class: 'icon-btn', onclick: async () => {
+  const topbar = el('div', { class:'topbar' },
+    el('button', { class:'icon-btn', onclick: async () => {
       await saveCurrentNote();
       state.view = 'project';
       state.notes = await listNotes(state.currentProject.id);
       render();
     }}, svg('<polyline points="15 6 9 12 15 18"/>', { sw:'2.2' })),
-    el('h1', { style: 'font-size:16px;font-weight:600' }, state.currentNote),
-    el('button', { class: 'icon-btn', onclick: showNoteMenu },
+    el('h1', { style:'font-size:16px;font-weight:600' }, state.currentNote),
+    el('button', { class:'icon-btn', onclick: showNoteMenu },
       svg('<circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/>')
     )
   );
-
-  const wrap = el('div', { class: 'editor-wrap' });
-  const ta = el('textarea', { class: 'editor', placeholder: 'Пишите здесь. Markdown поддерживается. Автосохранение.' });
+  const wrap = el('div', { class:'editor-wrap' });
+  const ta = el('textarea', { class:'editor', placeholder:'Пишите здесь. Markdown поддерживается. Автосохранение.' });
   ta.value = state.noteContent;
-
-  const status = el('div', { class: 'save-status' },
-    el('div', { class: 'sdot' }),
-    el('span', {}, 'Сохранено')
-  );
-
+  const status = el('div', { class:'save-status' }, el('div', { class:'sdot' }), el('span', {}, 'Сохранено'));
   let timer = null;
   ta.addEventListener('input', () => {
     state.noteContent = ta.value;
@@ -496,26 +1023,30 @@ function renderNote() {
       status.lastChild.textContent = 'Сохранено';
     }, 700);
   });
-
   wrap.append(ta, status);
   app.append(topbar, wrap);
   setTimeout(() => ta.focus(), 80);
 }
 
 function showNoteMenu() {
-  openModal({
-    title: 'Удалить заметку?',
-    text: 'Заметка будет удалена без возможности отмены. Бэкап сохранит её только если вы сделали его ранее.',
-    confirmText: 'Удалить',
-    danger: true,
-    onConfirm: async () => {
-      await deleteNote(state.currentProject.id, state.currentNote);
-      state.currentNote = null;
-      state.view = 'project';
-      state.notes = await listNotes(state.currentProject.id);
-      toast('Заметка удалена');
-      render();
-    }
+  openActionSheet({
+    title: state.currentNote,
+    actions: [
+      { label:'Удалить заметку', danger:true, onClick: () => {
+        openModal({
+          title:'Удалить заметку?',
+          confirmText:'Удалить', danger:true,
+          onSubmit: async () => {
+            await deleteNote(state.currentProject.id, state.currentNote);
+            state.currentNote = null;
+            state.view = 'project';
+            state.notes = await listNotes(state.currentProject.id);
+            toast('Заметка удалена');
+            render();
+          }
+        });
+      }}
+    ]
   });
 }
 
@@ -526,12 +1057,12 @@ async function saveCurrentNote() {
 
 function addProject() {
   openModal({
-    title: 'Новый проект',
-    input: true,
-    inputPlaceholder: 'Название проекта',
-    confirmText: 'Создать',
-    onConfirm: async (name) => {
-      await createProject(name);
+    title:'Новый проект',
+    confirmText:'Создать',
+    fields:[{ name:'name', label:'Название', type:'text', placeholder:'Название проекта' }],
+    onSubmit: async (vals) => {
+      if (!vals.name.trim()) return;
+      await createProject(vals.name);
       toast('Проект создан');
       render();
     }
