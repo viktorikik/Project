@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Portal">
 <meta name="theme-color" content="#F4EBDD">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-512.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23292724'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%23DCEB32'/%3E%3Cpath d='M21 33l8 8 14-15' stroke='%23292724' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <title>Portal</title>
 <style>
 :root {
@@ -153,6 +156,12 @@ input, textarea, select { font: inherit; color: inherit; }
 
 .toast { position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom)); transform: translateX(-50%); padding: 12px 20px; background: var(--graphite); color: var(--paper); border-radius: 999px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lg); z-index: 200; animation: slideUp .2s ease; white-space: nowrap; }
 
+.info-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.info-row { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.info-row:last-child { border-bottom: none; }
+.info-row span:first-child { color: var(--muted); }
+.info-row span:last-child { font-weight: 600; }
+
 .c0 { background: var(--lime); color: var(--graphite); }
 .c1 { background: var(--coral); color: var(--paper); }
 .c2 { background: var(--sage); color: var(--paper); }
@@ -203,7 +212,7 @@ async function createProject(name) {
   const base = name.trim().toLowerCase().replace(/[^a-z0-9а-яё]+/gi,'-').replace(/^-|-$/g,'') || 'project';
   const id = base + '-' + Date.now().toString(36);
   const dir = await projectDir(id, true);
-  const mh = await dir.getFileHandle('project.json', { create: true });
+  const mh = await dir.getFileHandle('project.json', { create:true });
   const meta = {
     name: name.trim(), purpose:'', status:'active', currentFocus:'',
     stack:[], links:[], tags:[],
@@ -217,13 +226,11 @@ async function readProjectMeta(id) {
   try { return await readJSON(await (await projectDir(id)).getFileHandle('project.json')); }
   catch { return { name:id, purpose:'', status:'active', currentFocus:'', stack:[], links:[], tags:[] }; }
 }
-
 async function writeProjectMeta(id, meta) {
   meta.updatedAt = new Date().toISOString();
   const fh = await (await projectDir(id, true)).getFileHandle('project.json', { create:true });
   await writeFile(fh, JSON.stringify(meta, null, 2));
 }
-
 async function touchProject(id) {
   try {
     const fh = await (await projectDir(id)).getFileHandle('project.json');
@@ -232,7 +239,6 @@ async function touchProject(id) {
     await writeFile(fh, JSON.stringify(meta, null, 2));
   } catch {}
 }
-
 async function deleteProject(id) {
   const dir = await projectsDir();
   await dir.removeEntry(id, { recursive:true });
@@ -248,24 +254,20 @@ async function listNotes(projectId) {
   out.sort((a,b) => b.id.localeCompare(a.id));
   return out;
 }
-
 async function readNote(projectId, noteId) {
   const fh = await (await notesDir(projectId)).getFileHandle(noteId + '.md');
   return await (await fh.getFile()).text();
 }
-
 async function saveNote(projectId, noteId, text) {
   const dir = await notesDir(projectId, true);
   const fh = await dir.getFileHandle(noteId + '.md', { create:true });
   await writeFile(fh, text);
   await touchProject(projectId);
 }
-
 async function deleteNote(projectId, noteId) {
   await (await notesDir(projectId)).removeEntry(noteId + '.md');
   await touchProject(projectId);
 }
-
 function newNoteId() {
   const d = new Date(); const p = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}`;
@@ -346,6 +348,187 @@ async function exportBackup() {
   toast('Бэкап сохранён');
 }
 
+// ===== Auto-snapshots & restore =====
+async function copyDir(src, dst) {
+  for await (const [name, h] of src) {
+    if (h.kind === 'file') {
+      const buf = await (await h.getFile()).arrayBuffer();
+      const w = await (await dst.getFileHandle(name, { create:true })).createWritable();
+      await w.write(buf);
+      await w.close();
+    } else {
+      const sub = await dst.getDirectoryHandle(name, { create:true });
+      await copyDir(h, sub);
+    }
+  }
+}
+
+async function makeAutoSnapshot() {
+  const r = await root();
+  const auto = await r.getDirectoryHandle('auto-backups', { create:true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const dest = await auto.getDirectoryHandle(stamp, { create:true });
+  try {
+    const pdir = await r.getDirectoryHandle('projects');
+    await copyDir(pdir, dest);
+  } catch {}
+  // Оставляем только 3 последних снапшота
+  const names = [];
+  for await (const [name, h] of auto) if (h.kind === 'directory') names.push(name);
+  names.sort();
+  while (names.length > 3) {
+    const oldest = names.shift();
+    try { await auto.removeEntry(oldest, { recursive:true }); } catch {}
+  }
+  return stamp;
+}
+
+async function clearProjectsDir() {
+  const r = await root();
+  try { await r.removeEntry('projects', { recursive:true }); } catch {}
+}
+
+async function restoreBackup(entries) {
+  await makeAutoSnapshot();
+  await clearProjectsDir();
+  const r = await root();
+  const pdir = await r.getDirectoryHandle('projects', { create:true });
+  for (const [path, data] of Object.entries(entries)) {
+    if (path === 'manifest.json') continue;
+    if (!path.startsWith('projects/')) continue;
+    const parts = path.split('/').slice(1); // убираем "projects"
+    let dir = pdir;
+    for (let i = 0; i < parts.length - 1; i++) {
+      dir = await dir.getDirectoryHandle(parts[i], { create:true });
+    }
+    const fname = parts[parts.length - 1];
+    const fh = await dir.getFileHandle(fname, { create:true });
+    const w = await fh.createWritable();
+    await w.write(data);
+    await w.close();
+  }
+}
+
+function pickBackupFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.zip,application/zip';
+  inp.onchange = async () => {
+    const f = inp.files[0];
+    if (!f) return;
+    try {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      const entries = fflate.unzipSync(buf);
+      if (!entries['manifest.json']) throw new Error('В архиве нет manifest.json');
+      const manifest = JSON.parse(fflate.strFromU8(entries['manifest.json']));
+      if (manifest.format !== 'project-portal-backup') throw new Error('Неверный формат архива');
+
+      const projectIds = new Set();
+      let notesCount = 0, roadmapTasks = 0, ideasCount = 0;
+      for (const path of Object.keys(entries)) {
+        const m = path.match(/^projects\/([^/]+)\//);
+        if (m) projectIds.add(m[1]);
+        if (path.endsWith('/notes/') === false && path.includes('/notes/') && path.endsWith('.md')) notesCount++;
+        if (path.endsWith('/roadmap.json')) {
+          try {
+            const data = JSON.parse(fflate.strFromU8(entries[path]));
+            roadmapTasks += (data.items || []).length;
+          } catch {}
+        }
+        if (path.endsWith('/ideas.json')) {
+          try {
+            const data = JSON.parse(fflate.strFromU8(entries[path]));
+            ideasCount += (data.items || []).length;
+          } catch {}
+        }
+      }
+
+      const created = manifest.createdAt ? new Date(manifest.createdAt).toLocaleString('ru-RU') : '—';
+
+      openModal({
+        title:'Восстановить из бэкапа?',
+        text:'Текущие данные будут заменены содержимым архива. Перед заменой автоматически создаётся локальный снапшот (хранятся последние 3).',
+        confirmText:'Восстановить',
+        danger:true,
+        fields:[],
+        onSubmit: async () => {
+          const t = toast('Восстановление…');
+          try {
+            await restoreBackup(entries);
+            localStorage.removeItem('lastBackup');
+            state.view = 'list';
+            state.currentProject = null;
+            toast('Восстановлено');
+            render();
+          } catch (e) {
+            toast('Ошибка: ' + e.message);
+          }
+        }
+      });
+
+      // Добавим инфо-блок в открытую модалку
+      const modal = document.querySelector('.modal-backdrop .modal');
+      if (modal) {
+        const info = el('div', { class:'info-list' },
+          el('div', { class:'info-row' }, el('span', {}, 'Файл'), el('span', {}, f.name)),
+          el('div', { class:'info-row' }, el('span', {}, 'Создан'), el('span', {}, created)),
+          el('div', { class:'info-row' }, el('span', {}, 'Проектов'), el('span', {}, String(projectIds.size))),
+          el('div', { class:'info-row' }, el('span', {}, 'Заметок'), el('span', {}, String(notesCount))),
+          el('div', { class:'info-row' }, el('span', {}, 'Задач'), el('span', {}, String(roadmapTasks))),
+          el('div', { class:'info-row' }, el('span', {}, 'Идей'), el('span', {}, String(ideasCount)))
+        );
+        modal.insertBefore(info, modal.querySelector('.modal-actions'));
+      }
+    } catch (e) {
+      toast('Не удалось открыть: ' + e.message);
+    }
+  };
+  inp.click();
+}
+
+// ===== App icon generator =====
+function generateAppIcon() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const ctx = c.getContext('2d');
+  // Графитовый фон
+  ctx.fillStyle = '#292724';
+  ctx.fillRect(0, 0, 512, 512);
+  // Лаймовый круг
+  ctx.fillStyle = '#DCEB32';
+  ctx.beginPath();
+  ctx.arc(256, 256, 190, 0, Math.PI * 2);
+  ctx.fill();
+  // Графитовая галочка
+  ctx.strokeStyle = '#292724';
+  ctx.lineWidth = 52;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(160, 268);
+  ctx.lineTo(232, 340);
+  ctx.lineTo(360, 185);
+  ctx.stroke();
+
+  c.toBlob(async blob => {
+    if (!blob) return;
+    const file = new File([blob], 'icon-512.png', { type:'image/png' });
+    if (navigator.canShare && navigator.canShare({ files:[file] })) {
+      try {
+        await navigator.share({ files:[file], title:'icon-512.png' });
+        toast('Сохраните файл в репозиторий');
+        return;
+      } catch {}
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'icon-512.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    toast('Файл скачан');
+  }, 'image/png');
+}
+
 function el(tag, props={}, ...children) {
   const e = document.createElement(tag);
   for (const [k,v] of Object.entries(props)) {
@@ -369,21 +552,15 @@ function svg(path, opts={}) {
   s.innerHTML = path;
   return s;
 }
-
 function toast(msg) {
   const t = el('div', { class:'toast' }, msg);
   document.body.appendChild(t);
-  setTimeout(() => { t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2000);
+  setTimeout(() => { t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2200);
+  return t;
 }
-
 function colorClass(i) { return 'c' + (i % 5); }
 function initials(name) { return (name || '?').trim().slice(0,1).toUpperCase(); }
 function daysSince(iso) { return iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null; }
-
-function closeTop() {
-  const b = document.querySelector('.modal-backdrop, .sheet-backdrop');
-  if (b) b.remove();
-}
 
 function openModal({ title, text, fields=[], confirmText='OK', danger=false, onSubmit }) {
   if (document.querySelector('.modal-backdrop')) return;
@@ -459,9 +636,30 @@ function bigCheck() {
   return el('div', { class:'mark' }, svg('<polyline points="20 6 9 17 4 12"/>', { sw:'2.5' }));
 }
 
+function appMenu() {
+  openActionSheet({
+    title:'Portal',
+    actions: [
+      { label:'Восстановить из бэкапа', onClick: pickBackupFile },
+      { label:'Сгенерировать иконку приложения', onClick: generateAppIcon },
+      { label:'О приложении', onClick: () => openModal({
+        title:'Portal',
+        text:'Локальный портал проектов. Данные хранятся в OPFS — приватном хранилище браузера, привязанном к этому сайту. Бэкапы в ZIP — единственный способ не потерять данные при очистке Safari.\n\nВерсия 0.4',
+        confirmText:'Понятно',
+        onSubmit: () => {}
+      })}
+    ]
+  });
+}
+
 async function renderList() {
   state.projects = await listProjects();
-  const topbar = el('div', { class:'topbar' }, el('h1', {}, 'Проекты'));
+  const topbar = el('div', { class:'topbar' },
+    el('h1', {}, 'Проекты'),
+    el('button', { class:'icon-btn', onclick: appMenu },
+      svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>', { sw:'1.6' })
+    )
+  );
   const content = el('div', { class:'content' });
 
   const lastBackup = localStorage.getItem('lastBackup');
@@ -519,7 +717,6 @@ async function openProject(id) {
   state.view = 'project';
   render();
 }
-
 async function reloadProjectData() {
   const id = state.currentProject.id;
   state.notes = await listNotes(id);
@@ -527,7 +724,6 @@ async function reloadProjectData() {
   state.ideas = await readIdeas(id);
   state.architecture = await readArchitecture(id);
 }
-
 function switchTab(tab) { state.currentTab = tab; render(); }
 
 async function renderProject() {
@@ -541,21 +737,16 @@ async function renderProject() {
       svg('<circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/>')
     )
   );
-
   const tabs = el('div', { class:'tabs' });
-  const tabDefs = [
-    ['notes','Заметки'], ['roadmap','Роадмап'], ['architecture','Архитектура'], ['ideas','Идеи']
-  ];
+  const tabDefs = [['notes','Заметки'], ['roadmap','Роадмап'], ['architecture','Архитектура'], ['ideas','Идеи']];
   for (const [key, label] of tabDefs) {
     tabs.append(el('button', {
       class:'tab' + (state.currentTab===key?' active':''),
       onclick: () => switchTab(key)
     }, label));
   }
-
   const content = el('div', { class:'content' });
   app.append(topbar, tabs, content);
-
   if (state.currentTab === 'notes') renderNotesTab(content);
   else if (state.currentTab === 'roadmap') renderRoadmapTab(content);
   else if (state.currentTab === 'architecture') renderArchitectureTab(content);
@@ -673,8 +864,7 @@ function renderRoadmapTab(content) {
   const groups = { 'in-progress':[], 'in-test':[], planned:[], done:[] };
   for (const it of items) (groups[it.status] || groups.planned).push(it);
 
-  const sectionOrder = ['in-progress','in-test','planned','done'];
-  for (const key of sectionOrder) {
+  for (const key of ['in-progress','in-test','planned','done']) {
     const list = groups[key];
     if (!list.length) continue;
     const isCollapsed = state.collapsed[key] === true;
@@ -694,14 +884,13 @@ function renderRoadmapTab(content) {
           class:'task-badge ' + ROADMAP_CLASSES[it.status],
           onclick: (e) => { e.stopPropagation(); cycleTaskStatus(it.id); }
         }, ROADMAP_LABELS[it.status]);
-        const card = el('div', { class:'task-card', onclick: () => editTask(it.id) },
+        wrapper.append(el('div', { class:'task-card', onclick: () => editTask(it.id) },
           el('div', { class:'tmeta' },
             el('div', { class:'ttitle' }, it.title),
             it.note ? el('div', { class:'tnote' }, it.note) : null
           ),
           badge
-        );
-        wrapper.append(card);
+        ));
       }
       content.append(wrapper);
     }
@@ -729,7 +918,6 @@ async function cycleTaskStatus(id) {
   await writeRoadmap(state.currentProject.id, state.roadmap);
   render();
 }
-
 function addTask() {
   openModal({
     title:'Новая задача',
@@ -740,18 +928,16 @@ function addTask() {
     ],
     onSubmit: async (vals) => {
       if (!vals.title.trim()) return;
-      const it = {
+      state.roadmap.items.unshift({
         id: uid(), title: vals.title.trim(), note: vals.note.trim(),
         status:'planned', createdAt:new Date().toISOString(), updatedAt:new Date().toISOString()
-      };
-      state.roadmap.items.unshift(it);
+      });
       await writeRoadmap(state.currentProject.id, state.roadmap);
       toast('Задача добавлена');
       render();
     }
   });
 }
-
 function editTask(id) {
   const it = state.roadmap.items.find(x => x.id === id);
   if (!it) return;
@@ -763,7 +949,6 @@ function editTask(id) {
     ]
   });
 }
-
 function openTaskEditor(it) {
   openModal({
     title:'Редактировать задачу',
@@ -783,7 +968,6 @@ function openTaskEditor(it) {
     }
   });
 }
-
 function confirmDeleteTask(id) {
   openModal({
     title:'Удалить задачу?',
@@ -829,7 +1013,6 @@ function renderIdeasTab(content) {
     svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
   ));
 }
-
 function addIdea() {
   openModal({
     title:'Новая идея',
@@ -855,7 +1038,6 @@ function addIdea() {
     }
   });
 }
-
 function editIdea(id) {
   const it = state.ideas.items.find(x => x.id === id);
   if (!it) return;
@@ -867,7 +1049,6 @@ function editIdea(id) {
     ]
   });
 }
-
 function openIdeaEditor(it) {
   openModal({
     title:'Редактировать идею',
@@ -892,7 +1073,6 @@ function openIdeaEditor(it) {
     }
   });
 }
-
 function confirmDeleteIdea(id) {
   openModal({
     title:'Удалить идею?',
@@ -906,7 +1086,6 @@ function confirmDeleteIdea(id) {
     }
   });
 }
-
 async function promoteIdea(id) {
   const it = state.ideas.items.find(x => x.id === id);
   if (!it) return;
@@ -939,7 +1118,6 @@ function renderArchitectureTab(content) {
     el('button', { onclick: downloadArchitecture }, 'Скачать')
   );
   content.append(toolbar);
-
   if (isHtml) {
     const frame = document.createElement('iframe');
     frame.className = 'arch-frame';
@@ -952,7 +1130,6 @@ function renderArchitectureTab(content) {
     content.append(pre);
   }
 }
-
 function pickArchitectureFile() {
   const inp = document.createElement('input');
   inp.type = 'file';
@@ -970,7 +1147,6 @@ function pickArchitectureFile() {
   };
   inp.click();
 }
-
 function downloadArchitecture() {
   const a = state.architecture;
   if (!a) return;
@@ -993,7 +1169,6 @@ async function openNote(noteId) {
   state.view = 'note';
   render();
 }
-
 function renderNote() {
   const topbar = el('div', { class:'topbar' },
     el('button', { class:'icon-btn', onclick: async () => {
@@ -1027,7 +1202,6 @@ function renderNote() {
   app.append(topbar, wrap);
   setTimeout(() => ta.focus(), 80);
 }
-
 function showNoteMenu() {
   openActionSheet({
     title: state.currentNote,
@@ -1049,12 +1223,10 @@ function showNoteMenu() {
     ]
   });
 }
-
 async function saveCurrentNote() {
   if (!state.currentNote) return;
   await saveNote(state.currentProject.id, state.currentNote, state.noteContent);
 }
-
 function addProject() {
   openModal({
     title:'Новый проект',
@@ -1068,7 +1240,6 @@ function addProject() {
     }
   });
 }
-
 async function addNote() {
   const id = newNoteId();
   await saveNote(state.currentProject.id, id, '');
@@ -1082,6 +1253,10 @@ async function addNote() {
     return;
   }
   await render();
+
+  if ('serviceWorker' in navigator) {
+    try { await navigator.serviceWorker.register('./sw.js'); } catch {}
+  }
 })();
 </script>
 </body>
