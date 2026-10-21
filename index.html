@@ -656,7 +656,7 @@ function appMenu() {
       { label:'Сгенерировать иконку приложения', onClick: generateAppIcon },
       { label:'О приложении', onClick: () => openModal({
         title:'Portal',
-        text:'Локальный портал проектов. Данные хранятся в OPFS — приватном хранилище браузера, привязанном к этому сайту. Бэкапы в ZIP — единственный способ не потерять данные при очистке Safari.\n\nВерсия 0.5',
+        text:'Локальный портал проектов. Данные хранятся в OPFS — приватном хранилище браузера, привязанном к этому сайту. Бэкапы в ZIP — единственный способ не потерять данные при очистке Safari.\n\nВерсия 0.6',
         confirmText:'Понятно',
         onSubmit: () => {}
       })}
@@ -959,8 +959,10 @@ function renderRoadmapFileSection(content) {
   if (isHtml) {
     const frame = document.createElement('iframe');
     frame.className = 'arch-frame';
-    frame.setAttribute('sandbox', 'allow-scripts');
-    frame.srcdoc = file.content;
+    // Изоляция для iOS: allow-same-origin и загрузка через Blob вместо srcdoc
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    const blob = new Blob([file.content], { type: 'text/html' });
+    frame.src = URL.createObjectURL(blob);
     content.append(frame);
   } else {
     const pre = el('div', { class:'arch-pre' });
@@ -1215,8 +1217,10 @@ function renderArchitectureTab(content) {
   if (isHtml) {
     const frame = document.createElement('iframe');
     frame.className = 'arch-frame';
-    frame.setAttribute('sandbox', 'allow-scripts');
-    frame.srcdoc = arch.content;
+    // Изоляция для iOS: allow-same-origin и загрузка через Blob вместо srcdoc
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    const blob = new Blob([arch.content], { type: 'text/html' });
+    frame.src = URL.createObjectURL(blob);
     content.append(frame);
   } else {
     const pre = el('div', { class:'arch-pre' });
