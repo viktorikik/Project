@@ -41,6 +41,10 @@ input, textarea, select { font: inherit; color: inherit; }
 .tab { padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; background: var(--paper); border: 1px solid var(--line); color: var(--graphite); white-space: nowrap; flex-shrink: 0; }
 .tab.active { background: var(--graphite); color: var(--paper); border-color: var(--graphite); }
 
+.subtabs { display: flex; gap: 4px; padding: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 16px; }
+.subtab { flex: 1; padding: 8px 12px; border-radius: 9px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.subtab.active { background: var(--graphite); color: var(--paper); }
+
 .content { padding: 8px 20px 120px; flex: 1; }
 
 .backup-banner { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--graphite); color: var(--paper); border-radius: 18px; margin-bottom: 20px; }
@@ -184,7 +188,8 @@ const PRIO_LABELS = { low:'Низкий', med:'Средний', high:'Высок
 const state = {
   view:'list', projects:[], currentProject:null, currentTab:'notes',
   notes:[], currentNote:null, noteContent:'',
-  roadmap:{ items:[] }, ideas:{ items:[] }, architecture:null,
+  roadmap:{ items:[] }, roadmapFile:null, roadmapSubtab:'tasks',
+  ideas:{ items:[] }, architecture:null,
   collapsed:{ done:true }
 };
 
@@ -282,6 +287,27 @@ async function writeRoadmap(id, data) {
   await writeFile(fh, JSON.stringify(data, null, 2));
   await touchProject(id);
 }
+
+async function readRoadmapFile(id) {
+  const dir = await projectDir(id);
+  for (const name of ['roadmap.html','roadmap.md','roadmap.txt']) {
+    try {
+      const fh = await dir.getFileHandle(name);
+      return { name, content: await (await fh.getFile()).text() };
+    } catch {}
+  }
+  return null;
+}
+async function saveRoadmapFile(id, name, content) {
+  const dir = await projectDir(id, true);
+  for (const old of ['roadmap.html','roadmap.md','roadmap.txt']) {
+    try { await dir.removeEntry(old); } catch {}
+  }
+  const fh = await dir.getFileHandle(name, { create:true });
+  await writeFile(fh, content);
+  await touchProject(id);
+}
+
 async function readIdeas(id) {
   try { return JSON.parse(await (await (await projectDir(id)).getFileHandle('ideas.json')).getFile().then(f=>f.text())); }
   catch { return { items:[] }; }
@@ -348,7 +374,6 @@ async function exportBackup() {
   toast('Бэкап сохранён');
 }
 
-// ===== Auto-snapshots & restore =====
 async function copyDir(src, dst) {
   for await (const [name, h] of src) {
     if (h.kind === 'file') {
@@ -362,7 +387,6 @@ async function copyDir(src, dst) {
     }
   }
 }
-
 async function makeAutoSnapshot() {
   const r = await root();
   const auto = await r.getDirectoryHandle('auto-backups', { create:true });
@@ -372,7 +396,6 @@ async function makeAutoSnapshot() {
     const pdir = await r.getDirectoryHandle('projects');
     await copyDir(pdir, dest);
   } catch {}
-  // Оставляем только 3 последних снапшота
   const names = [];
   for await (const [name, h] of auto) if (h.kind === 'directory') names.push(name);
   names.sort();
@@ -382,12 +405,10 @@ async function makeAutoSnapshot() {
   }
   return stamp;
 }
-
 async function clearProjectsDir() {
   const r = await root();
   try { await r.removeEntry('projects', { recursive:true }); } catch {}
 }
-
 async function restoreBackup(entries) {
   await makeAutoSnapshot();
   await clearProjectsDir();
@@ -396,7 +417,7 @@ async function restoreBackup(entries) {
   for (const [path, data] of Object.entries(entries)) {
     if (path === 'manifest.json') continue;
     if (!path.startsWith('projects/')) continue;
-    const parts = path.split('/').slice(1); // убираем "projects"
+    const parts = path.split('/').slice(1);
     let dir = pdir;
     for (let i = 0; i < parts.length - 1; i++) {
       dir = await dir.getDirectoryHandle(parts[i], { create:true });
@@ -408,7 +429,6 @@ async function restoreBackup(entries) {
     await w.close();
   }
 }
-
 function pickBackupFile() {
   const inp = document.createElement('input');
   inp.type = 'file';
@@ -428,7 +448,7 @@ function pickBackupFile() {
       for (const path of Object.keys(entries)) {
         const m = path.match(/^projects\/([^/]+)\//);
         if (m) projectIds.add(m[1]);
-        if (path.endsWith('/notes/') === false && path.includes('/notes/') && path.endsWith('.md')) notesCount++;
+        if (path.includes('/notes/') && path.endsWith('.md')) notesCount++;
         if (path.endsWith('/roadmap.json')) {
           try {
             const data = JSON.parse(fflate.strFromU8(entries[path]));
@@ -442,7 +462,6 @@ function pickBackupFile() {
           } catch {}
         }
       }
-
       const created = manifest.createdAt ? new Date(manifest.createdAt).toLocaleString('ru-RU') : '—';
 
       openModal({
@@ -450,9 +469,7 @@ function pickBackupFile() {
         text:'Текущие данные будут заменены содержимым архива. Перед заменой автоматически создаётся локальный снапшот (хранятся последние 3).',
         confirmText:'Восстановить',
         danger:true,
-        fields:[],
         onSubmit: async () => {
-          const t = toast('Восстановление…');
           try {
             await restoreBackup(entries);
             localStorage.removeItem('lastBackup');
@@ -466,7 +483,6 @@ function pickBackupFile() {
         }
       });
 
-      // Добавим инфо-блок в открытую модалку
       const modal = document.querySelector('.modal-backdrop .modal');
       if (modal) {
         const info = el('div', { class:'info-list' },
@@ -486,20 +502,16 @@ function pickBackupFile() {
   inp.click();
 }
 
-// ===== App icon generator =====
 function generateAppIcon() {
   const c = document.createElement('canvas');
   c.width = c.height = 512;
   const ctx = c.getContext('2d');
-  // Графитовый фон
   ctx.fillStyle = '#292724';
   ctx.fillRect(0, 0, 512, 512);
-  // Лаймовый круг
   ctx.fillStyle = '#DCEB32';
   ctx.beginPath();
   ctx.arc(256, 256, 190, 0, Math.PI * 2);
   ctx.fill();
-  // Графитовая галочка
   ctx.strokeStyle = '#292724';
   ctx.lineWidth = 52;
   ctx.lineCap = 'round';
@@ -644,7 +656,7 @@ function appMenu() {
       { label:'Сгенерировать иконку приложения', onClick: generateAppIcon },
       { label:'О приложении', onClick: () => openModal({
         title:'Portal',
-        text:'Локальный портал проектов. Данные хранятся в OPFS — приватном хранилище браузера, привязанном к этому сайту. Бэкапы в ZIP — единственный способ не потерять данные при очистке Safari.\n\nВерсия 0.4',
+        text:'Локальный портал проектов. Данные хранятся в OPFS — приватном хранилище браузера, привязанном к этому сайту. Бэкапы в ZIP — единственный способ не потерять данные при очистке Safari.\n\nВерсия 0.5',
         confirmText:'Понятно',
         onSubmit: () => {}
       })}
@@ -712,6 +724,7 @@ async function openProject(id) {
   const meta = await readProjectMeta(id);
   state.currentProject = { id, ...meta };
   state.currentTab = 'notes';
+  state.roadmapSubtab = 'tasks';
   state.collapsed = { done:true };
   await reloadProjectData();
   state.view = 'project';
@@ -721,6 +734,7 @@ async function reloadProjectData() {
   const id = state.currentProject.id;
   state.notes = await listNotes(id);
   state.roadmap = await readRoadmap(id);
+  state.roadmapFile = await readRoadmapFile(id);
   state.ideas = await readIdeas(id);
   state.architecture = await readArchitecture(id);
 }
@@ -846,6 +860,23 @@ function renderNotesTab(content) {
 }
 
 function renderRoadmapTab(content) {
+  const subtabs = el('div', { class:'subtabs' },
+    el('button', {
+      class:'subtab' + (state.roadmapSubtab==='tasks'?' active':''),
+      onclick: () => { state.roadmapSubtab='tasks'; render(); }
+    }, 'Задачи'),
+    el('button', {
+      class:'subtab' + (state.roadmapSubtab==='file'?' active':''),
+      onclick: () => { state.roadmapSubtab='file'; render(); }
+    }, 'Файл')
+  );
+  content.append(subtabs);
+
+  if (state.roadmapSubtab === 'file') {
+    renderRoadmapFileSection(content);
+    return;
+  }
+
   const items = state.roadmap.items || [];
   const total = items.length;
   const done = items.filter(i => i.status === 'done').length;
@@ -907,6 +938,69 @@ function renderRoadmapTab(content) {
   app.append(el('button', { class:'fab', onclick: addTask },
     svg('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>')
   ));
+}
+
+function renderRoadmapFileSection(content) {
+  const file = state.roadmapFile;
+  if (!file) {
+    content.append(el('div', { class:'empty', style:'padding:32px 20px' },
+      bigCheck(),
+      el('p', {}, 'Загрузите готовый роадмап файлом (.html, .md или .txt). HTML покажем изолированно.'),
+      el('button', { class:'cta', onclick: pickRoadmapFile }, 'Загрузить файл')
+    ));
+    return;
+  }
+  const isHtml = file.name.endsWith('.html');
+  const toolbar = el('div', { class:'arch-toolbar' },
+    el('button', { onclick: pickRoadmapFile }, 'Заменить'),
+    el('button', { onclick: downloadRoadmapFile }, 'Скачать')
+  );
+  content.append(toolbar);
+  if (isHtml) {
+    const frame = document.createElement('iframe');
+    frame.className = 'arch-frame';
+    frame.setAttribute('sandbox', 'allow-scripts');
+    frame.srcdoc = file.content;
+    content.append(frame);
+  } else {
+    const pre = el('div', { class:'arch-pre' });
+    pre.textContent = file.content;
+    content.append(pre);
+  }
+}
+
+function pickRoadmapFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.html,.htm,.md,.txt,text/html,text/markdown,text/plain';
+  inp.onchange = async () => {
+    const f = inp.files[0];
+    if (!f) return;
+    const content = await f.text();
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    const name = 'roadmap.' + (['html','htm'].includes(ext) ? 'html' : ext === 'md' ? 'md' : 'txt');
+    await saveRoadmapFile(state.currentProject.id, name, content);
+    state.roadmapFile = { name, content };
+    toast('Роадмап обновлён');
+    render();
+  };
+  inp.click();
+}
+
+function downloadRoadmapFile() {
+  const a = state.roadmapFile;
+  if (!a) return;
+  const blob = new Blob([a.content], { type: a.name.endsWith('.html') ? 'text/html' : 'text/plain' });
+  const file = new File([blob], a.name);
+  if (navigator.canShare && navigator.canShare({ files:[file] })) {
+    navigator.share({ files:[file], title:a.name }).catch(()=>{});
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = a.name;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 async function cycleTaskStatus(id) {
@@ -1098,6 +1192,7 @@ async function promoteIdea(id) {
   await writeRoadmap(state.currentProject.id, state.roadmap);
   toast('Перенесено в роадмап');
   state.currentTab = 'roadmap';
+  state.roadmapSubtab = 'tasks';
   render();
 }
 
@@ -1112,8 +1207,7 @@ function renderArchitectureTab(content) {
     return;
   }
   const isHtml = arch.name.endsWith('.html');
-  const toolbar = el('div', { class:'arch-toolbar' });
-  toolbar.append(
+  const toolbar = el('div', { class:'arch-toolbar' },
     el('button', { onclick: pickArchitectureFile }, 'Заменить'),
     el('button', { onclick: downloadArchitecture }, 'Скачать')
   );
